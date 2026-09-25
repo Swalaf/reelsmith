@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Archivo+Black&family=Bebas+Neue&family=DM+Sans:wght@500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.460.0/font/lucide.css">
+<style>
+html,body{margin:0;background:#f5f5f3;-webkit-font-smoothing:antialiased}
+a{color:#17181a;text-decoration:none}a:hover{color:oklch(0.58 0.19 35)}
+*{box-sizing:border-box}
+@keyframes rs-spin{to{transform:rotate(360deg)}}
+@keyframes rs-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes rs-wave{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes rs-shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes rs-scan{0%{transform:translateY(-100%)}100%{transform:translateY(400%)}}
+</style>
+</helmet>
+<div style="display:flex;min-height:100vh;font-family:'Geist',system-ui,sans-serif;color:#17181a;background:#f5f5f3;font-size:14px">
+
+<sc-if value="{{ drawerOverlay }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeDrawer }}" style="position:fixed;inset:0;background:rgba(10,10,12,.45);z-index:39"></div>
+</sc-if>
+
+<aside style="width:248px;flex:none;background:{{ sb.bg }};color:{{ sb.fg }};display:flex;flex-direction:column;gap:18px;position:{{ sb.pos }};top:0;left:0;height:100vh;z-index:40;transform:{{ sb.tf }};transition:transform .25s ease;padding:16px 12px;border-right:1px solid {{ sb.line }};overflow-y:auto">
+  <div style="display:flex;align-items:center;gap:10px;padding:4px 8px">
+    <div style="width:30px;height:30px;border-radius:8px;background:oklch(0.58 0.19 35);display:grid;place-items:center;color:#fff"><i class="icon-play" style="font-size:15px"></i></div>
+    <div style="display:flex;flex-direction:column;line-height:1.1">
+      <span style="font-weight:600;font-size:15px;color:{{ sb.strong }};letter-spacing:-0.01em">Reelsmith</span>
+      <span style="font-family:'Geist Mono',monospace;font-size:10.5px;opacity:.6">Studio · v2.4</span>
+    </div>
+    <sc-if value="{{ isMobile }}"><button onClick="{{ closeDrawer }}" style="margin-left:auto;background:none;border:0;color:inherit;cursor:pointer;font-size:18px"><i class="icon-x"></i></button></sc-if>
+  </div>
+  <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="3">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.5;padding:0 10px 6px">{{ g.title }}</div>
+      <sc-for list="{{ g.items }}" as="n" hint-placeholder-count="4">
+        <button onClick="{{ n.go }}" style="display:flex;align-items:center;gap:10px;width:100%;height:36px;padding:0 10px;border:0;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};font:inherit;font-size:13.5px;cursor:pointer;text-align:left">
+          <i class="{{ n.icon }}" style="font-size:16px;width:18px;text-align:center"></i>
+          <span style="flex:1">{{ n.label }}</span>
+          <sc-if value="{{ n.hasBadge }}"><span style="font-family:'Geist Mono',monospace;font-size:10.5px;padding:2px 6px;border-radius:6px;background:{{ sb.badge }}">{{ n.badge }}</span></sc-if>
+        </button>
+      </sc-for>
+    </div>
+  </sc-for>
+  <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+    <div style="border:1px solid {{ sb.line }};border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px"><span>Credits</span><span style="font-family:'Geist Mono',monospace;color:{{ sb.strong }}">2,480 / 5,000</span></div>
+      <div style="height:5px;border-radius:9px;background:{{ sb.line }}"><div style="width:49.6%;height:100%;border-radius:9px;background:oklch(0.58 0.19 35)"></div></div>
+      <div style="font-size:12px;opacity:.7">Renews Oct 1 · Professional plan</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:4px 6px">
+      <div style="width:32px;height:32px;border-radius:50%;background:#3a3c42;color:#fff;display:grid;place-items:center;font-size:12px;font-weight:600">JD</div>
+      <div style="display:flex;flex-direction:column;line-height:1.25;min-width:0">
+        <span style="font-size:13px;font-weight:500;color:{{ sb.strong }}">John Doe</span>
+        <span style="font-size:11.5px;opacity:.6">john@acme.co</span>
+      </div>
+      <i class="icon-chevrons-up-down" style="margin-left:auto;opacity:.5"></i>
+    </div>
+  </div>
+</aside>
+
+<main style="flex:1;min-width:0;display:flex;flex-direction:column">
+  <header style="position:sticky;top:0;z-index:30;height:60px;display:flex;align-items:center;gap:12px;padding:0 {{ hdrPad }};background:rgba(245,245,243,.88);backdrop-filter:blur(10px);border-bottom:1px solid #e8e7e3">
+    <sc-if value="{{ isMobile }}"><button onClick="{{ openDrawer }}" style="width:36px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer;display:grid;place-items:center"><i class="icon-menu" style="font-size:17px"></i></button></sc-if>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#6b6d72;min-width:0">
+      <span>Acme Studio</span><i class="icon-chevron-right" style="font-size:13px"></i><span style="color:#17181a;font-weight:500;white-space:nowrap">{{ pageTitle }}</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <sc-if value="{{ notMobile }}">
+        <div style="display:flex;align-items:center;gap:8px;height:36px;width:260px;padding:0 12px;border:1px solid #e1e0dc;border-radius:9px;background:#fff;color:#8a8c91"><i class="icon-search" style="font-size:15px"></i><span style="font-size:13px;flex:1">Search projects, videos…</span><span style="font-family:'Geist Mono',monospace;font-size:11px;border:1px solid #e1e0dc;border-radius:5px;padding:1px 5px">⌘K</span></div>
+      </sc-if>
+      <div style="display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:9px;background:#fff;border:1px solid #e1e0dc;font-size:13px"><i class="icon-coins" style="font-size:15px;color:oklch(0.58 0.19 35)"></i><span style="font-family:'Geist Mono',monospace">2,480</span></div>
+      <button style="position:relative;width:36px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer;display:grid;place-items:center"><i class="icon-bell" style="font-size:16px"></i><span style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:oklch(0.58 0.19 35);border:2px solid #fff"></span></button>
+    </div>
+  </header>
+
+  <div style="flex:1;width:100%;max-width:{{ maxW }};margin:0 auto;padding:{{ pad }}">
+
+<!-- DASHBOARD -->
+<sc-if value="{{ s.dashboard }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+    <div>
+      <h1 style="margin:0;font-size:30px;font-weight:600;letter-spacing:-0.025em">Good morning, John 👋</h1>
+      <p style="margin:6px 0 0;color:#6b6d72;font-size:15px">Turn your ideas into professional videos.</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button onClick="{{ go.templates }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;color:#17181a;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-layout-template" style="font-size:16px"></i>Browse templates</button>
+      <button onClick="{{ go.create }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 4px 14px oklch(0.58 0.19 35 / .28)"><i class="icon-plus" style="font-size:16px"></i>Create Video</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px">
+    <sc-for list="{{ stats }}" as="st" hint-placeholder-count="5">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(20,20,25,.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center;color:#6b6d72;font-size:13px"><span>{{ st.label }}</span><i class="{{ st.icon }}" style="font-size:16px"></i></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:28px;font-weight:600;letter-spacing:-0.025em;font-variant-numeric:tabular-nums">
+          <sc-if value="{{ st.live }}"><span style="width:8px;height:8px;border-radius:50%;background:oklch(0.6 0.15 250);animation:rs-pulse 1.4s ease-in-out infinite"></span></sc-if>
+          {{ st.value }}<span style="font-size:14px;font-weight:500;color:#8a8c91">{{ st.unit }}</span>
+        </div>
+        <sc-if value="{{ st.bar }}"><div style="height:5px;border-radius:9px;background:#efeeea"><div style="width:{{ st.pct }};height:100%;border-radius:9px;background:{{ st.barColor }}"></div></div></sc-if>
+        <div style="font-size:12.5px;color:{{ st.subColor }}">{{ st.sub }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <h2 style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.01em">Quick create</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px">
+      <sc-for list="{{ quick }}" as="q" hint-placeholder-count="4">
+        <button onClick="{{ q.go }}" style="text-align:left;font:inherit;color:inherit;cursor:pointer;background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(20,20,25,.04)" style-hover="border-color:#cfcdc7;box-shadow:0 6px 20px rgba(20,20,25,.07)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="width:40px;height:40px;border-radius:11px;background:#f3f2ef;display:grid;place-items:center"><i class="{{ q.icon }}" style="font-size:19px"></i></div>
+            <i class="icon-arrow-up-right" style="color:#a0a2a7;font-size:17px"></i>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font-weight:600;font-size:15px">{{ q.title }}</span><span style="color:#6b6d72;font-size:13px;line-height:1.45;text-wrap:pretty">{{ q.desc }}</span></div>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:{{ dashCols }};gap:18px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0;font-size:17px;font-weight:600">Recent projects</h2><button onClick="{{ go.library }}" style="background:none;border:0;font:inherit;font-size:13px;color:#6b6d72;cursor:pointer;display:flex;align-items:center;gap:4px">View all<i class="icon-arrow-right" style="font-size:14px"></i></button></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px">
+        <sc-for list="{{ recent }}" as="p" hint-placeholder-count="6">
+          <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(20,20,25,.04);display:flex;flex-direction:column">
+            <div onClick="{{ p.open }}" style="position:relative;aspect-ratio:16/10;background:{{ p.c }};cursor:pointer;overflow:hidden">
+              <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div>
+              <span style="position:absolute;left:12px;top:10px;font-family:'Geist Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.7)">thumbnail · {{ p.ratio }}</span>
+              <span style="position:absolute;right:10px;bottom:10px;font-family:'Geist Mono',monospace;font-size:11px;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:6px">{{ p.dur }}</span>
+              <sc-if value="{{ p.processing }}"><div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.2)"><div style="width:64%;height:100%;background:#fff"></div></div></sc-if>
+            </div>
+            <div style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:flex-start;gap:8px"><span style="font-weight:500;font-size:14px;flex:1;line-height:1.3">{{ p.name }}</span><button style="background:none;border:0;cursor:pointer;color:#8a8c91;padding:2px"><i class="icon-ellipsis" style="font-size:16px"></i></button></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:{{ p.sbg }};color:{{ p.sfg }}"><span style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>{{ p.status }}</span>
+                <span style="font-size:12px;color:#8a8c91">{{ p.date }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(20,20,25,.04)">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600;font-size:15px">Your AI stack</span><button onClick="{{ go.providers }}" style="background:none;border:0;font:inherit;font-size:13px;color:#6b6d72;cursor:pointer">Manage</button></div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ stack }}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #f0efec">
+            <div style="width:32px;height:32px;border-radius:9px;background:#f3f2ef;display:grid;place-items:center"><i class="{{ k.icon }}" style="font-size:15px"></i></div>
+            <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.3"><span style="font-size:12px;color:#8a8c91">{{ k.cat }}</span><span style="font-size:13.5px;font-weight:500">{{ k.name }}</span></div>
+            <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.62 0.14 150)"></span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="border-radius:11px;background:#f6f5f2;padding:14px;display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;color:#6b6d72">Estimated AI cost this month</span>
+        <span style="font-size:22px;font-weight:600;font-family:'Geist Mono',monospace;letter-spacing:-0.02em">$4.82</span>
+        <span style="font-size:12px;color:#6b6d72;line-height:1.45">Billed by your providers directly. No platform fee.</span>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- CREATE WIZARD -->
+<sc-if value="{{ s.create }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.02em">{{ idea.topic }}</h1><p style="margin:4px 0 0;font-size:13px;color:#8a8c91;display:flex;align-items:center;gap:6px"><i class="icon-cloud-check" style="font-size:14px"></i>Draft saved · just now</p></div>
+    <button onClick="{{ go.dashboard }}" style="height:36px;padding:0 14px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">Save &amp; exit</button>
+  </div>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:8px;display:flex;gap:4px;overflow-x:auto">
+    <sc-for list="{{ steps }}" as="sp" hint-placeholder-count="7">
+      <button onClick="{{ sp.go }}" style="flex:1 0 auto;display:flex;align-items:center;gap:9px;height:44px;padding:0 12px;border:0;border-radius:10px;background:{{ sp.bg }};font:inherit;font-size:13.5px;color:{{ sp.fg }};cursor:pointer;white-space:nowrap">
+        <span style="width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:600;background:{{ sp.dotBg }};color:{{ sp.dotFg }};font-family:'Geist Mono',monospace"><sc-if value="{{ sp.done }}"><i class="icon-check" style="font-size:13px"></i></sc-if><sc-if value="{{ sp.notDone }}">{{ sp.n }}</sc-if></span>
+        <span style="font-weight:{{ sp.fw }}">{{ sp.label }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <!-- STEP 1 IDEA -->
+  <sc-if value="{{ st.idea }}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid;grid-template-columns:{{ sideCols }};gap:18px;align-items:start">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:22px">
+      <div><h2 style="margin:0;font-size:18px;font-weight:600">Video idea</h2><p style="margin:4px 0 0;color:#6b6d72;font-size:13.5px">Describe what you want. The AI writes the script and plans the scenes.</p></div>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Video topic</span><input value="{{ idea.topic }}" onChange="{{ setTopic }}" style="height:44px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14.5px;background:#fff;color:#17181a;outline:none;width:100%" style-focus="border-color:#17181a;box-shadow:0 0 0 3px rgba(23,24,26,.08)"></label>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Description</span><textarea rows="3" defaultValue="Short product ad for Hydra, a smart water bottle that glows when it's time to drink, syncs with your phone and keeps water cold for 24 hours." style="padding:11px 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;line-height:1.5;resize:vertical;outline:none;width:100%" style-focus="border-color:#17181a;box-shadow:0 0 0 3px rgba(23,24,26,.08)"></textarea></label>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+        <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Target audience</span><input defaultValue="Busy professionals, 25–40" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%" style-focus="border-color:#17181a;box-shadow:0 0 0 3px rgba(23,24,26,.08)"></label>
+        <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Language</span><select style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;background:#fff;outline:none;width:100%"><option>English (US)</option><option>English (UK)</option><option>Spanish</option><option>German</option><option>French</option><option>Portuguese (BR)</option><option>Hindi</option></select></label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Tone</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ toneChips }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.on }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Platform</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ platChips }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.on }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px">
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Duration</span>
+          <div style="display:flex;padding:3px;border-radius:10px;background:#f1f0ed;gap:2px"><sc-for list="{{ durChips }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.on }}" style="flex:1;height:34px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;font-weight:500;color:#17181a;cursor:pointer;font-family:'Geist Mono',monospace">{{ c.label }}</button></sc-for></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Aspect ratio</span>
+          <div style="display:flex;gap:8px"><sc-for list="{{ ratioChips }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.on }}" style="flex:1;height:64px;border:1px solid {{ c.bd }};border-radius:10px;background:{{ c.tileBg }};font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span style="width:{{ c.w }};height:{{ c.h }};border:1.5px solid #17181a;border-radius:3px"></span><span style="font-family:'Geist Mono',monospace;font-size:11px">{{ c.label }}</span></button></sc-for></div>
+        </div>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Primary call to action</span><input defaultValue="Shop now at hydra.co" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%" style-focus="border-color:#17181a;box-shadow:0 0 0 3px rgba(23,24,26,.08)"></label>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-weight:600;font-size:15px">Generation plan</span>
+        <sc-for list="{{ plan }}" as="pl" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:30px;height:30px;border-radius:8px;background:#f3f2ef;display:grid;place-items:center"><i class="{{ pl.icon }}" style="font-size:14px"></i></div><div style="display:flex;flex-direction:column;line-height:1.3;min-width:0"><span style="font-size:13px;font-weight:500">{{ pl.step }}</span><span style="font-size:12px;color:#6b6d72;font-family:'Geist Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pl.via }}</span></div></div>
+        </sc-for>
+        <div style="height:1px;background:#f0efec"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="border-radius:10px;background:#f6f5f2;padding:12px"><div style="font-size:11.5px;color:#6b6d72">Est. credits</div><div style="font-size:20px;font-weight:600;font-family:'Geist Mono',monospace">38</div></div>
+          <div style="border-radius:10px;background:#f6f5f2;padding:12px"><div style="font-size:11.5px;color:#6b6d72">Est. time</div><div style="font-size:20px;font-weight:600;font-family:'Geist Mono',monospace">~2 min</div></div>
+        </div>
+        <div style="font-size:12.5px;color:#6b6d72;font-family:'Geist Mono',monospace">{{ outputLine }}</div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- STEP 2 SCRIPT -->
+  <sc-if value="{{ st.script }}" hint-placeholder-val="{{ false }}">
+  <div style="display:grid;grid-template-columns:{{ sideCols }};gap:18px;align-items:start">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid #f0efec">
+        <span style="font-weight:600;font-size:15px;margin-right:auto">Script</span>
+        <button onClick="{{ regenScript }}" style="display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer"><i class="icon-refresh-cw" style="font-size:14px"></i>Regenerate</button>
+        <button onClick="{{ toggleEditScript }}" style="display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:9px;border:1px solid {{ editBtn.bd }};background:{{ editBtn.bg }};color:{{ editBtn.fg }};font:inherit;font-size:13px;cursor:pointer"><i class="icon-pencil" style="font-size:14px"></i>{{ editBtn.label }}</button>
+      </div>
+      <sc-if value="{{ regen }}">
+        <div style="padding:24px 22px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b6d72"><i class="icon-loader-circle" style="animation:rs-spin 1s linear infinite;display:inline-block"></i>Rewriting with OpenRouter…</div>
+          <div style="height:22px;width:60%;border-radius:6px;background:linear-gradient(90deg,#f0efec 0,#e6e5e1 50%,#f0efec 100%);background-size:800px 100%;animation:rs-shimmer 1.2s linear infinite"></div>
+          <div style="height:14px;width:92%;border-radius:6px;background:linear-gradient(90deg,#f0efec 0,#e6e5e1 50%,#f0efec 100%);background-size:800px 100%;animation:rs-shimmer 1.2s linear infinite"></div>
+          <div style="height:14px;width:84%;border-radius:6px;background:linear-gradient(90deg,#f0efec 0,#e6e5e1 50%,#f0efec 100%);background-size:800px 100%;animation:rs-shimmer 1.2s linear infinite"></div>
+          <div style="height:14px;width:70%;border-radius:6px;background:linear-gradient(90deg,#f0efec 0,#e6e5e1 50%,#f0efec 100%);background-size:800px 100%;animation:rs-shimmer 1.2s linear infinite"></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ notRegen }}">
+        <div style="padding:22px;display:flex;flex-direction:column;gap:20px">
+          <sc-if value="{{ viewScript }}"><h3 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.02em">{{ script.title }}</h3></sc-if>
+          <sc-if value="{{ editScript }}"><input value="{{ script.title }}" onChange="{{ scriptSet.title }}" style="height:46px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:19px;font-weight:600;outline:none;width:100%"></sc-if>
+          <sc-for list="{{ scriptParts }}" as="sp2" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:4px 1fr;gap:14px">
+              <div style="border-radius:4px;background:{{ sp2.color }}"></div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;gap:10px;align-items:center"><span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">{{ sp2.label }}</span><span style="font-family:'Geist Mono',monospace;font-size:11px;color:#8a8c91">{{ sp2.time }}</span></div>
+                <sc-if value="{{ viewScript }}"><p style="margin:0;font-size:15.5px;line-height:1.65;color:#2a2b2e;text-wrap:pretty">{{ sp2.text }}</p></sc-if>
+                <sc-if value="{{ editScript }}"><textarea rows="3" value="{{ sp2.text }}" onChange="{{ sp2.set }}" style="padding:10px 12px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:15px;line-height:1.6;resize:vertical;outline:none;width:100%"></textarea></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px">
+      <span style="font-weight:600;font-size:15px">Script details</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="border-radius:10px;background:#f6f5f2;padding:12px"><div style="font-size:11.5px;color:#6b6d72">Est. duration</div><div style="font-size:20px;font-weight:600;font-family:'Geist Mono',monospace">{{ scriptDur }}</div></div>
+        <div style="border-radius:10px;background:#f6f5f2;padding:12px"><div style="font-size:11.5px;color:#6b6d72">Word count</div><div style="font-size:20px;font-weight:600;font-family:'Geist Mono',monospace">{{ wordCount }}</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <div style="display:flex;justify-content:space-between"><span style="color:#6b6d72">Speaking pace</span><span>150 wpm</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6b6d72">Tone</span><span>{{ idea.tone }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6b6d72">Target length</span><span>{{ idea.dur }}</span></div>
+      </div>
+      <div style="height:1px;background:#f0efec"></div>
+      <div style="font-size:12px;color:#6b6d72;line-height:1.5">Generated with <span style="font-family:'Geist Mono',monospace;color:#17181a">OpenRouter · llama-3.3-70b:free</span> · 0 credits</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- STEP 3 SCENES -->
+  <sc-if value="{{ st.scenes }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">Timeline</span><span style="font-family:'Geist Mono',monospace;color:#6b6d72">{{ sceneCount }} scenes · {{ totalLabel }}</span></div>
+      <div style="display:flex;gap:3px;height:34px">
+        <sc-for list="{{ sceneRows }}" as="sc" hint-placeholder-count="5"><div style="flex:{{ sc.dur }};border-radius:7px;background:{{ sc.c }};color:#fff;font-family:'Geist Mono',monospace;font-size:11px;display:flex;align-items:center;padding:0 8px;overflow:hidden;white-space:nowrap">{{ sc.num }} · {{ sc.durLabel }}</div></sc-for>
+      </div>
+    </div>
+    <sc-for list="{{ sceneRows }}" as="sc" hint-placeholder-count="5">
+      <div draggable="true" onDragStart="{{ sc.onDragStart }}" onDragOver="{{ sc.onDragOver }}" onDrop="{{ sc.onDrop }}" onDragEnd="{{ sc.onDragEnd }}" style="background:#fff;border:1px solid {{ sc.bd }};border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;gap:16px;align-items:stretch;opacity:{{ sc.op }};transition:border-color .15s">
+        <div style="display:flex;align-items:center;gap:10px">
+          <i class="icon-grip-vertical" style="color:#a0a2a7;cursor:grab;font-size:17px"></i>
+          <div style="position:relative;width:150px;aspect-ratio:16/10;border-radius:10px;background:{{ sc.c }};overflow:hidden;flex:none">
+            <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div>
+            <span style="position:absolute;left:8px;top:7px;font-family:'Geist Mono',monospace;font-size:10.5px;color:#fff;background:rgba(0,0,0,.4);padding:1px 6px;border-radius:5px">{{ sc.num }}</span>
+            <sc-if value="{{ sc.rg }}"><div style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;color:#fff"><i class="icon-loader-circle" style="animation:rs-spin 1s linear infinite;display:inline-block;font-size:20px"></i></div></sc-if>
+          </div>
+        </div>
+        <div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8a8c91">Visual prompt</span>
+            <sc-if value="{{ sc.view }}"><span style="font-size:13.5px;line-height:1.5;color:#3a3c40">{{ sc.prompt }}</span></sc-if>
+            <sc-if value="{{ sc.editing }}"><input value="{{ sc.prompt }}" onChange="{{ sc.setPrompt }}" style="height:38px;padding:0 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13.5px;outline:none;width:100%"></sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8a8c91">Narration</span>
+            <sc-if value="{{ sc.view }}"><span style="font-size:14.5px;line-height:1.5">“{{ sc.narration }}”</span></sc-if>
+            <sc-if value="{{ sc.editing }}"><textarea rows="2" value="{{ sc.narration }}" onChange="{{ sc.setNarr }}" style="padding:9px 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:14px;outline:none;resize:vertical;width:100%"></textarea></sc-if>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:7px;background:#f3f2ef;font-size:12.5px"><i class="icon-captions" style="font-size:13px"></i>{{ sc.caption }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:7px;background:#f3f2ef;font-size:12.5px;font-family:'Geist Mono',monospace"><i class="icon-clock" style="font-size:13px"></i>{{ sc.durLabel }}</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:4px">
+          <button title="Regenerate" onClick="{{ sc.onRegen }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e8e7e3;background:#fff;cursor:pointer;display:grid;place-items:center"><i class="icon-refresh-cw" style="font-size:14px"></i></button>
+          <button title="Edit" onClick="{{ sc.onEdit }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e8e7e3;background:{{ sc.editBg }};cursor:pointer;display:grid;place-items:center"><i class="icon-pencil" style="font-size:14px"></i></button>
+          <button title="Duplicate" onClick="{{ sc.onDup }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e8e7e3;background:#fff;cursor:pointer;display:grid;place-items:center"><i class="icon-copy" style="font-size:14px"></i></button>
+          <button title="Delete" onClick="{{ sc.onDel }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e8e7e3;background:#fff;cursor:pointer;display:grid;place-items:center;color:oklch(0.55 0.18 25)"><i class="icon-trash-2" style="font-size:14px"></i></button>
+        </div>
+      </div>
+    </sc-for>
+    <button onClick="{{ addScene }}" style="height:54px;border-radius:14px;border:1.5px dashed #d6d4ce;background:transparent;font:inherit;font-size:14px;font-weight:500;color:#55575c;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px" style-hover="border-color:#17181a;color:#17181a"><i class="icon-plus" style="font-size:16px"></i>Add scene</button>
+  </div>
+  </sc-if>
+
+  <!-- STEP 4 VISUALS -->
+  <sc-if value="{{ st.visuals }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+      <div style="font-size:13.5px;color:#6b6d72"><span style="color:#17181a;font-weight:600">{{ visDone }}</span> of {{ sceneCount }} scenes have visuals</div>
+      <button onClick="{{ genAll }}" style="display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer"><i class="icon-wand-sparkles" style="font-size:15px"></i>Generate all missing</button>
+    </div>
+    <sc-for list="{{ visRows }}" as="v" hint-placeholder-count="5">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;gap:18px">
+        <div style="position:relative;width:200px;aspect-ratio:16/10;border-radius:10px;overflow:hidden;flex:none;background:{{ v.thumbBg }};border:1px dashed {{ v.thumbBd }}">
+          <sc-if value="{{ v.done }}"><div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div><span style="position:absolute;left:8px;bottom:7px;font-family:'Geist Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.8)">{{ v.kind }} · 1080×1920</span></sc-if>
+          <sc-if value="{{ v.empty }}"><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#8a8c91;font-size:12px"><i class="icon-image" style="font-size:20px"></i>No visual yet</div></sc-if>
+          <sc-if value="{{ v.loading }}">
+            <div style="position:absolute;inset:0;background:#1d1f23;overflow:hidden"><div style="position:absolute;left:0;right:0;height:30%;background:linear-gradient(180deg,transparent,rgba(255,255,255,.08),transparent);animation:rs-scan 1.6s linear infinite"></div></div>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff"><span style="font-size:12.5px">Generating visual…</span><span style="font-family:'Geist Mono',monospace;font-size:18px;font-weight:500">{{ v.pctLabel }}</span></div>
+            <div style="position:absolute;left:0;bottom:0;height:3px;width:{{ v.pct }};background:oklch(0.7 0.17 40);transition:width .1s linear"></div>
+          </sc-if>
+        </div>
+        <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#8a8c91">SCENE {{ v.num }} · {{ v.durLabel }}</span><span style="font-size:14px;line-height:1.45">{{ v.prompt }}</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:10px;background:#f1f0ed;align-self:flex-start">
+            <sc-for list="{{ v.tabs }}" as="tb" hint-placeholder-count="4"><button onClick="{{ tb.on }}" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:0;border-radius:7px;background:{{ tb.bg }};box-shadow:{{ tb.sh }};font:inherit;font-size:12.5px;font-weight:500;color:#17181a;cursor:pointer"><i class="{{ tb.icon }}" style="font-size:13px"></i>{{ tb.label }}</button></sc-for>
+          </div>
+          <sc-if value="{{ v.isAI }}">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+              <label style="display:flex;flex-direction:column;gap:5px;flex:1 1 160px"><span style="font-size:12px;color:#6b6d72">Provider</span><select style="height:36px;padding:0 10px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;background:#fff"><sc-for list="{{ v.provs }}" as="o"><option>{{ o }}</option></sc-for></select></label>
+              <label style="display:flex;flex-direction:column;gap:5px;flex:1 1 160px"><span style="font-size:12px;color:#6b6d72">Model</span><select style="height:36px;padding:0 10px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;background:#fff;font-family:'Geist Mono',monospace"><sc-for list="{{ v.models }}" as="o"><option>{{ o }}</option></sc-for></select></label>
+              <button onClick="{{ v.onGen }}" style="display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:9px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer"><i class="icon-sparkles" style="font-size:14px"></i>{{ v.genLabel }}</button>
+            </div>
+            <span style="font-size:12px;color:#8a8c91">{{ v.cost }}</span>
+          </sc-if>
+          <sc-if value="{{ v.isUpload }}"><div style="height:64px;border:1.5px dashed #d6d4ce;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;color:#55575c;font-size:13px"><i class="icon-upload" style="font-size:16px"></i>Drop an image or MP4 here, or <span style="text-decoration:underline">browse</span></div></sc-if>
+          <sc-if value="{{ v.isLib }}"><div style="display:flex;gap:8px"><sc-for list="{{ libPick }}" as="lp" hint-placeholder-count="5"><div style="width:64px;aspect-ratio:1;border-radius:8px;background:{{ lp }};cursor:pointer"></div></sc-for><div style="width:64px;aspect-ratio:1;border-radius:8px;border:1px solid #e1e0dc;display:grid;place-items:center;font-size:12px;color:#6b6d72">+248</div></div></sc-if>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <!-- STEP 5 VOICE -->
+  <sc-if value="{{ st.voice }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+      <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ voiceCats }}" as="c" hint-placeholder-count="8"><button onClick="{{ c.on }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b6d72">Voice provider<select style="height:34px;padding:0 10px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;background:#fff"><option>Edge TTS (free)</option><option>Piper (self-hosted)</option><option>ElevenLabs</option><option>OpenAI TTS</option></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px">
+      <sc-for list="{{ voiceList }}" as="vc" hint-placeholder-count="6">
+        <div style="background:#fff;border:1.5px solid {{ vc.bd }};border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;box-shadow:{{ vc.sh }}">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div style="width:42px;height:42px;border-radius:50%;background:{{ vc.c }};color:#fff;display:grid;place-items:center;font-weight:600">{{ vc.init }}</div>
+            <div style="display:flex;flex-direction:column;flex:1;line-height:1.3"><span style="font-weight:600;font-size:15px">{{ vc.name }}</span><span style="font-size:12.5px;color:#6b6d72">{{ vc.lang }} · {{ vc.accent }}</span></div>
+            <sc-if value="{{ vc.sel }}"><span style="width:22px;height:22px;border-radius:50%;background:#17181a;color:#fff;display:grid;place-items:center"><i class="icon-check" style="font-size:12px"></i></span></sc-if>
+          </div>
+          <div style="display:flex;align-items:center;gap:3px;height:28px">
+            <sc-for list="{{ vc.bars }}" as="b"><span style="flex:1;height:{{ b.h }};border-radius:2px;background:{{ b.c }};transform-origin:center;animation:{{ b.anim }}"></span></sc-for>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ vc.tags }}" as="tg"><span style="font-size:11.5px;padding:3px 8px;border-radius:6px;background:#f3f2ef;color:#55575c">{{ tg }}</span></sc-for></div>
+          <div style="display:flex;gap:8px">
+            <button onClick="{{ vc.onPlay }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer"><i class="{{ vc.playIcon }}" style="font-size:14px"></i>{{ vc.playLabel }}</button>
+            <button onClick="{{ vc.onSel }}" style="flex:1;height:36px;border-radius:9px;border:0;background:{{ vc.selBg }};color:{{ vc.selFg }};font:inherit;font-size:13px;font-weight:500;cursor:pointer">{{ vc.selLabel }}</button>
+          </div>
+        </div>
+      </sc-for>
+      <div style="border:1.5px dashed #d6d4ce;border-radius:14px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;min-height:200px">
+        <div style="width:42px;height:42px;border-radius:50%;background:#f3f2ef;display:grid;place-items:center"><i class="icon-mic" style="font-size:18px"></i></div>
+        <span style="font-weight:600">Upload voice</span>
+        <span style="font-size:12.5px;color:#6b6d72;line-height:1.45;max-width:220px">Clone a voice from a 30-second sample. Needs a provider that supports cloning.</span>
+        <span style="font-size:11.5px;font-family:'Geist Mono',monospace;color:#8a8c91">ElevenLabs · not connected</span>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- STEP 6 CAPTIONS -->
+  <sc-if value="{{ st.captions }}" hint-placeholder-val="{{ false }}">
+  <div style="display:grid;grid-template-columns:{{ capCols }};gap:18px;align-items:start">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Font</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px"><sc-for list="{{ capFonts }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.on }}" style="height:54px;border-radius:10px;border:1.5px solid {{ c.bd }};background:#fff;font-family:{{ c.ff }};font-size:17px;cursor:pointer;color:#17181a">{{ c.label }}</button></sc-for></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:500;color:#3a3c40">Size</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">{{ cap.size }}px</span></div><input type="range" min="28" max="72" value="{{ cap.size }}" onChange="{{ setCapSize }}" style="width:100%;accent-color:#17181a"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px">
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Position</span><div style="display:flex;padding:3px;border-radius:10px;background:#f1f0ed;gap:2px"><sc-for list="{{ capPos }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.on }}" style="flex:1;height:32px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Background</span><div style="display:flex;padding:3px;border-radius:10px;background:#f1f0ed;gap:2px"><sc-for list="{{ capBg }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.on }}" style="flex:1;height:32px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Animation</span><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ capAnim }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.on }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px">
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Text color</span><div style="display:flex;gap:8px"><sc-for list="{{ capColors }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.on }}" style="width:32px;height:32px;border-radius:50%;background:{{ c.v }};border:1px solid rgba(0,0,0,.12);box-shadow:{{ c.ring }};cursor:pointer"></button></sc-for></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Highlight color</span><div style="display:flex;gap:8px"><sc-for list="{{ capHls }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.on }}" style="width:32px;height:32px;border-radius:50%;background:{{ c.v }};border:1px solid rgba(0,0,0,.12);box-shadow:{{ c.ring }};cursor:pointer"></button></sc-for></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Highlight style</span><div style="display:flex;padding:3px;border-radius:10px;background:#f1f0ed;gap:2px"><sc-for list="{{ capHlStyle }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.on }}" style="flex:1;height:32px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+      <div style="position:relative;width:300px;max-width:100%;aspect-ratio:9/16;border-radius:22px;overflow:hidden;background:#2f4b4b;box-shadow:0 20px 50px rgba(20,20,25,.25);display:flex;flex-direction:column;justify-content:{{ capJustify }};padding:34px 18px">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,transparent 1px 11px)"></div>
+        <span style="position:absolute;left:14px;top:14px;font-family:'Geist Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.7)">scene 01 · footage</span>
+        <div style="position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;text-align:center">
+          <sc-for list="{{ capWords }}" as="wd" hint-placeholder-count="3"><span style="font-family:{{ capFF }};font-size:{{ capPx }};line-height:1.1;text-transform:{{ capTT }};color:{{ wd.color }};background:{{ wd.bg }};padding:{{ wd.pad }};border-radius:6px;border-bottom:{{ wd.ul }};text-shadow:{{ capShadow }};transform:{{ wd.tf }};opacity:{{ wd.op }};transition:all .15s ease;display:inline-block">{{ wd.w }}</span></sc-for>
+        </div>
+        <div style="position:absolute;left:14px;right:14px;bottom:12px;height:3px;border-radius:3px;background:rgba(255,255,255,.25)"><div style="height:100%;width:{{ capProg }};background:#fff;border-radius:3px;transition:width .4s linear"></div></div>
+      </div>
+      <span style="font-size:12px;color:#8a8c91;font-family:'Geist Mono',monospace">Live preview · 9:16</span>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="display:flex;justify-content:space-between;gap:10px;padding-top:4px">
+    <button onClick="{{ prevStep }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer;opacity:{{ backOp }}"><i class="icon-arrow-left" style="font-size:15px"></i>Back</button>
+    <button onClick="{{ nextStep }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 20px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer">{{ nextLabel }}<i class="icon-arrow-right" style="font-size:15px"></i></button>
+  </div>
+</div>
+</sc-if>
+
+<!-- RENDER -->
+<sc-if value="{{ s.render }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+  <sc-if value="{{ renderActive }}">
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:18px;overflow:hidden;box-shadow:0 10px 40px rgba(20,20,25,.06)">
+    <div style="padding:30px 30px 24px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px">
+        <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Rendering Your Video</h1><p style="margin:6px 0 0;color:#6b6d72;font-size:14px">{{ idea.topic }} · {{ idea.ratio }} · {{ totalLabel }}</p></div>
+        <div style="text-align:right"><div style="font-family:'Geist Mono',monospace;font-size:40px;font-weight:500;letter-spacing:-0.04em;line-height:1">{{ renderPct }}</div><div style="font-size:12.5px;color:#6b6d72;margin-top:4px">{{ eta }}</div></div>
+      </div>
+      <div style="height:8px;border-radius:9px;background:#efeeea;overflow:hidden"><div style="height:100%;width:{{ renderW }};background:oklch(0.58 0.19 35);border-radius:9px;transition:width .15s linear"></div></div>
+    </div>
+    <div style="border-top:1px solid #f0efec;display:flex;flex-direction:column">
+      <sc-for list="{{ stages }}" as="sg" hint-placeholder-count="6">
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 30px;border-bottom:1px solid #f5f4f1">
+          <span style="width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:{{ sg.bg }};color:{{ sg.fg }}"><i class="{{ sg.icon }}" style="font-size:14px;display:inline-block;animation:{{ sg.anim }}"></i></span>
+          <span style="flex:1;font-size:14.5px;font-weight:{{ sg.fw }};color:{{ sg.tc }}">{{ sg.label }}</span>
+          <span style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#6b6d72">{{ sg.meta }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding:16px 30px;background:#faf9f7;font-size:13px;color:#6b6d72;display:flex;align-items:center;gap:8px"><i class="icon-mail" style="font-size:15px"></i>You can leave this page. We'll email you when the video is ready.</div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ renderDone }}">
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:18px;padding:30px;display:flex;flex-wrap:wrap;gap:30px;align-items:center;box-shadow:0 10px 40px rgba(20,20,25,.06)">
+    <div style="position:relative;width:220px;aspect-ratio:9/16;border-radius:16px;overflow:hidden;background:#2f4b4b;flex:none;margin:0 auto">
+      <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,transparent 1px 11px)"></div>
+      <div style="position:absolute;inset:0;display:grid;place-items:center"><div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center"><i class="icon-play" style="font-size:22px;margin-left:3px"></i></div></div>
+      <span style="position:absolute;right:10px;bottom:10px;font-family:'Geist Mono',monospace;font-size:11px;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:6px">{{ totalLabel }}</span>
+    </div>
+    <div style="flex:1 1 300px;display:flex;flex-direction:column;gap:18px">
+      <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:500;background:oklch(0.95 0.04 150);color:oklch(0.42 0.12 150)"><i class="icon-circle-check" style="font-size:13px"></i>Render complete</span>
+      <h1 style="margin:12px 0 0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Your video is ready 🎉</h1><p style="margin:6px 0 0;color:#6b6d72;font-size:14px;line-height:1.5">{{ idea.topic }}</p></div>
+      <div style="display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:6px 22px;font-size:12.5px"><span style="color:#8a8c91">Resolution</span><span style="color:#8a8c91">Size</span><span style="color:#8a8c91">Credits used</span><span style="font-family:'Geist Mono',monospace">1080×1920</span><span style="font-family:'Geist Mono',monospace">18.2 MB</span><span style="font-family:'Geist Mono',monospace">36</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <button style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer"><i class="icon-download" style="font-size:15px"></i>Download MP4</button>
+        <button style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-play" style="font-size:15px"></i>Preview</button>
+        <button style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-share-2" style="font-size:15px"></i>Share</button>
+        <button onClick="{{ go.editor }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-pencil" style="font-size:15px"></i>Edit</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- EDITOR -->
+<sc-if value="{{ s.editor }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+    <span style="font-weight:600;font-size:16px;margin-right:auto">{{ idea.topic }}</span>
+    <button style="width:36px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer"><i class="icon-undo-2" style="font-size:15px"></i></button>
+    <button style="width:36px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer"><i class="icon-redo-2" style="font-size:15px"></i></button>
+    <button onClick="{{ goRender }}" style="display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer"><i class="icon-download" style="font-size:15px"></i>Export video</button>
+  </div>
+  <div style="display:grid;grid-template-columns:{{ edCols }};gap:12px;align-items:stretch">
+    <div style="order:{{ edOrd.left }};background:#fff;border:1px solid #e8e7e3;border-radius:14px;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+      <div style="display:flex;gap:2px;padding:6px;border-bottom:1px solid #f0efec"><sc-for list="{{ edTabs }}" as="t" hint-placeholder-count="3"><button onClick="{{ t.on }}" style="flex:1;height:30px;border:0;border-radius:7px;background:{{ t.bg }};font:inherit;font-size:12.5px;font-weight:500;cursor:pointer">{{ t.label }}</button></sc-for></div>
+      <sc-if value="{{ edTab.scenes }}"><div style="padding:8px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:520px">
+        <sc-for list="{{ edScenes }}" as="e" hint-placeholder-count="5"><button onClick="{{ e.on }}" style="display:flex;gap:10px;align-items:center;padding:6px;border-radius:10px;border:1.5px solid {{ e.bd }};background:{{ e.bg }};font:inherit;text-align:left;cursor:pointer">
+          <div style="width:44px;aspect-ratio:9/16;border-radius:6px;background:{{ e.c }};flex:none"></div>
+          <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'Geist Mono',monospace;font-size:10.5px;color:#8a8c91">{{ e.num }} · {{ e.durLabel }}</span><span style="font-size:12.5px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">{{ e.caption }}</span></div>
+        </button></sc-for>
+      </div></sc-if>
+      <sc-if value="{{ edTab.media }}"><div style="padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px"><sc-for list="{{ libPick }}" as="lp"><div style="aspect-ratio:1;border-radius:8px;background:{{ lp }}"></div></sc-for><div style="aspect-ratio:1;border-radius:8px;border:1.5px dashed #d6d4ce;display:grid;place-items:center;color:#6b6d72"><i class="icon-upload"></i></div></div></sc-if>
+      <sc-if value="{{ edTab.music }}"><div style="padding:10px;display:flex;flex-direction:column;gap:6px"><sc-for list="{{ tracks }}" as="tr"><div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px;border:1px solid {{ tr.bd }};background:{{ tr.bg }}"><i class="icon-music" style="font-size:14px"></i><div style="display:flex;flex-direction:column;flex:1;line-height:1.3"><span style="font-size:12.5px;font-weight:500">{{ tr.name }}</span><span style="font-size:11px;color:#8a8c91">{{ tr.mood }} · {{ tr.len }}</span></div></div></sc-for></div></sc-if>
+    </div>
+    <div style="order:{{ edOrd.center }};background:#141518;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;min-width:0">
+      <div style="position:relative;height:{{ edPrevH }};aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:{{ edCur.c }};transition:background .3s">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,transparent 1px 11px)"></div>
+        <span style="position:absolute;left:10px;top:10px;font-family:'Geist Mono',monospace;font-size:10px;color:rgba(255,255,255,.7)">scene {{ edCur.num }} · {{ edCur.kind }}</span>
+        <div style="position:absolute;left:12px;right:12px;bottom:14%;text-align:center;font-family:'Archivo Black',sans-serif;text-transform:uppercase;font-size:20px;line-height:1.1;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5)">{{ edCur.caption }}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;color:#fff">
+        <button onClick="{{ edPrev }}" style="background:none;border:0;color:#fff;cursor:pointer;font-size:17px"><i class="icon-skip-back"></i></button>
+        <button onClick="{{ edTogglePlay }}" style="width:44px;height:44px;border-radius:50%;border:0;background:#fff;color:#141518;cursor:pointer;display:grid;place-items:center"><i class="{{ edPlayIcon }}" style="font-size:18px"></i></button>
+        <button onClick="{{ edNext }}" style="background:none;border:0;color:#fff;cursor:pointer;font-size:17px"><i class="icon-skip-forward"></i></button>
+        <span style="font-family:'Geist Mono',monospace;font-size:12.5px;color:rgba(255,255,255,.75)">{{ edTime }} / {{ totalLabel }}</span>
+      </div>
+    </div>
+    <div style="order:{{ edOrd.right }};background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600;font-size:14px">Scene {{ edCur.num }}</span><button onClick="{{ edRegen }}" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12px;cursor:pointer"><i class="icon-refresh-cw" style="font-size:13px"></i>Regenerate</button></div>
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">Caption text</span><input value="{{ edCur.caption }}" onChange="{{ edSetCaption }}" style="height:38px;padding:0 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">Narration</span><textarea rows="3" value="{{ edCur.narration }}" onChange="{{ edSetNarr }}" style="padding:9px 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;line-height:1.5;outline:none;resize:vertical;width:100%"></textarea></label>
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">Media</span>
+        <div style="display:flex;gap:10px;align-items:center;padding:8px;border:1px solid #e8e7e3;border-radius:10px"><div style="width:40px;aspect-ratio:9/16;border-radius:5px;background:{{ edCur.c }}"></div><div style="display:flex;flex-direction:column;flex:1;line-height:1.3"><span style="font-size:12.5px;font-weight:500">{{ edCur.kind }}</span><span style="font-size:11px;color:#8a8c91;font-family:'Geist Mono',monospace">flux-1-schnell</span></div><button style="height:28px;padding:0 10px;border-radius:7px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12px;cursor:pointer">Replace</button></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:500;color:#55575c">Duration</span>
+        <div style="display:flex;align-items:center;border:1px solid #e1e0dc;border-radius:9px;overflow:hidden"><button onClick="{{ edDurDown }}" style="width:32px;height:32px;border:0;background:#fff;cursor:pointer"><i class="icon-minus" style="font-size:13px"></i></button><span style="width:44px;text-align:center;font-family:'Geist Mono',monospace;font-size:13px">{{ edCur.durLabel }}</span><button onClick="{{ edDurUp }}" style="width:32px;height:32px;border:0;background:#fff;cursor:pointer"><i class="icon-plus" style="font-size:13px"></i></button></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">Transition in</span><div style="display:flex;padding:3px;border-radius:9px;background:#f1f0ed;gap:2px"><sc-for list="{{ edTrans }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.on }}" style="flex:1;height:28px;border:0;border-radius:7px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:12px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">End card CTA</span><input defaultValue="Shop now at hydra.co" style="height:38px;padding:0 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+    </div>
+  </div>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;overflow-x:auto">
+    <div style="min-width:560px;display:grid;grid-template-columns:78px 1fr;gap:6px 10px;align-items:center">
+      <span></span>
+      <div style="position:relative;height:16px"><sc-for list="{{ ruler }}" as="r"><span style="position:absolute;left:{{ r.left }};font-family:'Geist Mono',monospace;font-size:10px;color:#8a8c91;transform:translateX(-50%)">{{ r.label }}</span></sc-for></div>
+      <span style="font-size:11.5px;color:#6b6d72;display:flex;align-items:center;gap:6px"><i class="icon-film" style="font-size:13px"></i>Video</span>
+      <div style="position:relative;display:flex;gap:3px;height:44px">
+        <sc-for list="{{ edScenes }}" as="e"><button onClick="{{ e.on }}" style="flex:{{ e.dur }};border-radius:7px;border:2px solid {{ e.tlBd }};background:{{ e.c }};color:#fff;font-family:'Geist Mono',monospace;font-size:10.5px;text-align:left;padding:0 7px;cursor:pointer;overflow:hidden;white-space:nowrap">{{ e.num }}</button></sc-for>
+        <div style="position:absolute;top:-22px;bottom:-110px;left:{{ edHead }};width:2px;background:oklch(0.58 0.19 35);pointer-events:none;z-index:2"><div style="position:absolute;top:0;left:-5px;width:12px;height:12px;border-radius:3px;background:oklch(0.58 0.19 35)"></div></div>
+      </div>
+      <span style="font-size:11.5px;color:#6b6d72;display:flex;align-items:center;gap:6px"><i class="icon-mic" style="font-size:13px"></i>Voice</span>
+      <div style="display:flex;gap:3px;height:26px"><sc-for list="{{ edScenes }}" as="e"><div style="flex:{{ e.dur }};border-radius:6px;background:oklch(0.93 0.04 45);background-image:repeating-linear-gradient(90deg,oklch(0.75 0.1 40) 0 2px,transparent 2px 5px);background-size:100% 50%;background-repeat:repeat-x;background-position:center"></div></sc-for></div>
+      <span style="font-size:11.5px;color:#6b6d72;display:flex;align-items:center;gap:6px"><i class="icon-captions" style="font-size:13px"></i>Captions</span>
+      <div style="display:flex;gap:3px;height:24px"><sc-for list="{{ edScenes }}" as="e"><div style="flex:{{ e.dur }};border-radius:6px;background:#f1f0ed;font-size:10.5px;padding:0 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;color:#55575c">{{ e.caption }}</div></sc-for></div>
+      <span style="font-size:11.5px;color:#6b6d72;display:flex;align-items:center;gap:6px"><i class="icon-music" style="font-size:13px"></i>Music</span>
+      <div style="height:24px;border-radius:6px;background:oklch(0.94 0.03 250);color:oklch(0.42 0.1 250);font-size:10.5px;display:flex;align-items:center;padding:0 8px">{{ trackName }}</div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- LIBRARY -->
+<sc-if value="{{ s.library }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">{{ libTitle }}</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Every video you've created, in one place.</p></div>
+    <button onClick="{{ go.create }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer"><i class="icon-plus" style="font-size:15px"></i>Create Video</button>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <div style="display:flex;padding:3px;border-radius:10px;background:#ebeae6;gap:2px;overflow-x:auto;max-width:100%"><sc-for list="{{ libTabs }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.on }}" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap">{{ c.label }}<span style="font-family:'Geist Mono',monospace;font-size:11px;color:#8a8c91">{{ c.count }}</span></button></sc-for></div>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border:1px solid #e1e0dc;border-radius:10px;background:#fff;width:240px;max-width:100%"><i class="icon-search" style="font-size:15px;color:#8a8c91"></i><input placeholder="Search videos" value="{{ q }}" onChange="{{ setQ }}" style="border:0;outline:none;font:inherit;font-size:13.5px;flex:1;min-width:0;background:transparent"></div>
+      <select value="{{ sort }}" onChange="{{ setSort }}" style="height:38px;padding:0 10px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13.5px;background:#fff"><option>Newest</option><option>Oldest</option><option>Name</option><option>Duration</option></select>
+    </div>
+  </div>
+  <sc-if value="{{ libEmpty }}">
+    <div style="border:1.5px dashed #d6d4ce;border-radius:16px;padding:56px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+      <div style="width:48px;height:48px;border-radius:14px;background:#fff;border:1px solid #e8e7e3;display:grid;place-items:center"><i class="icon-film" style="font-size:20px"></i></div>
+      <span style="font-weight:600;font-size:16px">No videos match</span><span style="color:#6b6d72;font-size:13.5px">Try a different filter or search term.</span>
+      <button onClick="{{ clearLib }}" style="margin-top:6px;height:36px;padding:0 14px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">Clear filters</button>
+    </div>
+  </sc-if>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">
+    <sc-for list="{{ libItems }}" as="p" hint-placeholder-count="8">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(20,20,25,.04);display:flex;flex-direction:column">
+        <div onClick="{{ p.open }}" style="position:relative;aspect-ratio:16/10;background:{{ p.c }};cursor:pointer;overflow:hidden">
+          <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div>
+          <span style="position:absolute;left:12px;top:10px;font-family:'Geist Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.7)">thumbnail · {{ p.ratio }}</span>
+          <span style="position:absolute;right:10px;bottom:10px;font-family:'Geist Mono',monospace;font-size:11px;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:6px">{{ p.dur }}</span>
+          <sc-if value="{{ p.processing }}"><div style="position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;gap:8px;color:#fff;font-size:12.5px"><i class="icon-loader-circle" style="animation:rs-spin 1s linear infinite;display:inline-block"></i>Rendering 64%</div></sc-if>
+          <sc-if value="{{ p.failed }}"><div style="position:absolute;inset:0;background:rgba(40,10,10,.45);display:flex;align-items:center;justify-content:center;gap:8px;color:#fff;font-size:12.5px"><i class="icon-circle-alert"></i>Voice provider timed out</div></sc-if>
+        </div>
+        <div style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px">
+          <span style="font-weight:500;font-size:14px;line-height:1.3">{{ p.name }}</span>
+          <div style="font-size:12px;color:#8a8c91">{{ p.platform }} · {{ p.date }}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:{{ p.sbg }};color:{{ p.sfg }}"><span style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>{{ p.status }}</span>
+            <div style="display:flex;gap:2px">
+              <sc-if value="{{ p.failed }}"><button title="Retry" style="width:30px;height:30px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:#55575c"><i class="icon-rotate-ccw" style="font-size:14px"></i></button></sc-if>
+              <sc-if value="{{ p.completed }}"><button title="Download" style="width:30px;height:30px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:#55575c"><i class="icon-download" style="font-size:14px"></i></button></sc-if>
+              <button onClick="{{ p.open }}" title="Edit" style="width:30px;height:30px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:#55575c"><i class="icon-pencil" style="font-size:14px"></i></button>
+              <button title="More" style="width:30px;height:30px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:#55575c"><i class="icon-ellipsis" style="font-size:14px"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- TEMPLATES -->
+<sc-if value="{{ s.templates }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Templates</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Proven structures for every platform. Pick one and swap in your content.</p></div>
+    <button style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer"><i class="icon-plus" style="font-size:15px"></i>Create Template<span style="font-size:10.5px;font-family:'Geist Mono',monospace;padding:2px 6px;border-radius:5px;background:#17181a;color:#fff">ADMIN</span></button>
+  </div>
+  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px"><sc-for list="{{ tplCats }}" as="c" hint-placeholder-count="10"><button onClick="{{ c.on }}" style="flex:none;height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer;white-space:nowrap">{{ c.label }}</button></sc-for></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+    <sc-for list="{{ tplItems }}" as="t" hint-placeholder-count="8">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden;display:flex;flex-direction:column" style-hover="box-shadow:0 8px 24px rgba(20,20,25,.08)">
+        <div style="height:210px;background:#f3f2ef;display:grid;place-items:center">
+          <div style="position:relative;width:{{ t.fw }};height:{{ t.fh }};border-radius:10px;background:{{ t.c }};overflow:hidden;box-shadow:0 8px 20px rgba(20,20,25,.18)">
+            <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div>
+            <span style="position:absolute;left:8px;top:7px;font-family:'Geist Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.7)">preview</span>
+            <div style="position:absolute;left:8px;right:8px;bottom:12px;height:8px;border-radius:3px;background:rgba(255,255,255,.85)"></div>
+            <div style="position:absolute;left:20px;right:20px;bottom:24px;height:6px;border-radius:3px;background:rgba(255,255,255,.5)"></div>
+          </div>
+        </div>
+        <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:3px"><span style="font-weight:600;font-size:14.5px">{{ t.name }}</span><span style="font-size:12.5px;color:#6b6d72">{{ t.cat }}</span></div>
+          <div style="display:flex;gap:6px"><span style="font-family:'Geist Mono',monospace;font-size:11px;padding:3px 7px;border-radius:6px;background:#f3f2ef">{{ t.dur }}</span><span style="font-family:'Geist Mono',monospace;font-size:11px;padding:3px 7px;border-radius:6px;background:#f3f2ef">{{ t.ratio }}</span></div>
+          <button onClick="{{ go.create }}" style="height:36px;border-radius:9px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13px;font-weight:500;cursor:pointer">Use Template</button>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- BRAND KIT -->
+<sc-if value="{{ s.brand }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Brand Kit</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Applied automatically to every new video.</p></div>
+    <button style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-check" style="font-size:15px"></i>Save brand kit</button>
+  </div>
+  <div style="display:grid;grid-template-columns:{{ capCols }};gap:18px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:18px">
+        <span style="font-weight:600;font-size:15px">Identity</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Brand name</span><input value="{{ brand.name }}" onChange="{{ bset.name }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Website</span><input value="{{ brand.web }}" onChange="{{ bset.web }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Logo</span>
+          <div style="display:flex;gap:14px;align-items:center;padding:14px;border:1.5px dashed #d6d4ce;border-radius:12px">
+            <div style="width:56px;height:56px;border-radius:12px;background:{{ brand.c0 }};color:{{ brand.c2 }};display:grid;place-items:center;font-family:'Archivo Black',sans-serif;font-size:22px">{{ brandInit }}</div>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font-size:13.5px;font-weight:500">hydra-logo.svg</span><span style="font-size:12px;color:#8a8c91">SVG or PNG, transparent background, max 2 MB</span></div>
+            <button style="height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">Replace</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Colors</span>
+          <div style="display:flex;flex-wrap:wrap;gap:10px"><sc-for list="{{ brandColors }}" as="bc" hint-placeholder-count="3"><label style="display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border:1px solid #e1e0dc;border-radius:11px;cursor:pointer"><span style="position:relative;width:34px;height:34px;border-radius:8px;background:{{ bc.v }};border:1px solid rgba(0,0,0,.1);overflow:hidden"><input type="color" value="{{ bc.v }}" onChange="{{ bc.set }}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%"></span><span style="display:flex;flex-direction:column;line-height:1.25"><span style="font-size:12px;color:#6b6d72">{{ bc.label }}</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px;text-transform:uppercase">{{ bc.v }}</span></span></label></sc-for></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Heading font</span><select value="{{ brand.heading }}" onChange="{{ bset.heading }}" style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;background:#fff"><option>Archivo Black</option><option>Bebas Neue</option><option>Space Grotesk</option><option>DM Sans</option></select></label>
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Body font</span><select value="{{ brand.body }}" onChange="{{ bset.body }}" style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;background:#fff"><option>DM Sans</option><option>Space Grotesk</option><option>Geist</option></select></label>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:18px">
+        <span style="font-weight:600;font-size:15px">Defaults</span>
+        <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Default CTA</span><input value="{{ brand.cta }}" onChange="{{ bset.cta }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Instagram</span><input defaultValue="@hydra" style="height:40px;padding:0 12px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">TikTok</span><input defaultValue="@drinkhydra" style="height:40px;padding:0 12px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">YouTube</span><input defaultValue="@hydrabottle" style="height:40px;padding:0 12px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:14px;border-radius:12px;background:#f6f5f2">
+          <div style="display:flex;flex-direction:column;flex:1;gap:2px"><span style="font-size:13.5px;font-weight:500">Watermark</span><span style="font-size:12.5px;color:#6b6d72">Show your logo in the corner of every video</span></div>
+          <select value="{{ brand.wmPos }}" onChange="{{ bset.wmPos }}" style="height:34px;padding:0 8px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;background:#fff"><option>Top right</option><option>Top left</option><option>Bottom right</option><option>Bottom left</option></select>
+          <button onClick="{{ toggleWm }}" style="width:42px;height:24px;border-radius:99px;border:0;background:{{ wmTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ wmKnob }};width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)"></span></button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;position:sticky;top:80px">
+      <div style="position:relative;width:300px;max-width:100%;aspect-ratio:9/16;border-radius:22px;overflow:hidden;background:{{ brand.c0 }};box-shadow:0 20px 50px rgba(20,20,25,.25)">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,transparent 1px 11px)"></div>
+        <sc-if value="{{ brand.wm }}"><div style="position:absolute;top:{{ wmCss.t }};bottom:{{ wmCss.b }};left:{{ wmCss.l }};right:{{ wmCss.r }};display:flex;align-items:center;gap:6px;opacity:.85"><div style="width:22px;height:22px;border-radius:6px;background:{{ brand.c2 }};color:{{ brand.c0 }};display:grid;place-items:center;font-family:'Archivo Black',sans-serif;font-size:11px">{{ brandInit }}</div><span style="color:{{ brand.c2 }};font-size:12px;font-weight:600;font-family:{{ brandBodyFF }}">{{ brand.name }}</span></div></sc-if>
+        <div style="position:absolute;left:18px;right:18px;top:40%;text-align:center;font-family:{{ brandHeadFF }};font-size:30px;line-height:1.05;text-transform:uppercase;color:{{ brand.c2 }}">Stay <span style="color:{{ brand.c1 }}">hydrated</span> all day</div>
+        <div style="position:absolute;left:18px;right:18px;bottom:26px;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="height:42px;padding:0 20px;border-radius:999px;background:{{ brand.c1 }};color:{{ brand.c0 }};display:flex;align-items:center;font-family:{{ brandBodyFF }};font-weight:700;font-size:14px">{{ brand.cta }}</div>
+          <span style="font-family:{{ brandBodyFF }};color:{{ brand.c2 }};opacity:.75;font-size:12px">{{ brand.web }}</span>
+        </div>
+      </div>
+      <span style="font-size:12px;color:#8a8c91;font-family:'Geist Mono',monospace">Live preview · end card</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- AI PROVIDERS -->
+<sc-if value="{{ s.providers }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><div style="display:flex;align-items:center;gap:8px"><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">AI Providers</h1><span style="font-size:10.5px;font-family:'Geist Mono',monospace;padding:2px 6px;border-radius:5px;background:#17181a;color:#fff">ADMIN</span></div><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Bring your own API keys. Every generation runs on accounts you control.</p></div>
+    <button onClick="{{ openCustom }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-plus" style="font-size:15px"></i>Add custom provider</button>
+  </div>
+  <div style="background:#111214;color:#e7e7ea;border-radius:16px;padding:22px 24px;display:flex;flex-wrap:wrap;gap:22px;align-items:center">
+    <div style="flex:1 1 300px;display:flex;flex-direction:column;gap:6px">
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-family:'Geist Mono',monospace;color:oklch(0.78 0.13 45)"><i class="icon-key-round" style="font-size:14px"></i>BRING YOUR OWN API KEYS</span>
+      <span style="font-size:17px;font-weight:600;line-height:1.4;color:#fff;text-wrap:pretty">You control your AI costs. Connect free providers to get started, or add paid providers when you need more capacity.</span>
+    </div>
+    <div style="flex:1 1 360px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px">
+      <div style="padding:10px 12px;border-radius:10px;border:1px solid #2b2d33;display:flex;align-items:center;gap:8px"><i class="icon-server" style="font-size:15px"></i>Your server</div>
+      <i class="icon-arrow-right" style="color:#6b6d72"></i>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><span style="padding:6px 10px;border-radius:8px;background:#1d1f23">Text</span><span style="padding:6px 10px;border-radius:8px;background:#1d1f23">Image</span><span style="padding:6px 10px;border-radius:8px;background:#1d1f23">Video</span><span style="padding:6px 10px;border-radius:8px;background:#1d1f23">Voice</span></div>
+      <i class="icon-arrow-right" style="color:#6b6d72"></i>
+      <div style="padding:10px 12px;border-radius:10px;border:1px solid #2b2d33;display:flex;align-items:center;gap:8px"><i class="icon-key-round" style="font-size:15px"></i>Your provider accounts</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+    <sc-for list="{{ provSummary }}" as="ps" hint-placeholder-count="4"><div style="background:#fff;border:1px solid #e8e7e3;border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border-radius:10px;background:#f3f2ef;display:grid;place-items:center"><i class="{{ ps.icon }}" style="font-size:16px"></i></div><div style="display:flex;flex-direction:column;line-height:1.3"><span style="font-size:13.5px;font-weight:500">{{ ps.title }}</span><span style="font-size:12px;color:#6b6d72">{{ ps.line }}</span></div></div></sc-for>
+  </div>
+  <sc-for list="{{ provSections }}" as="sec" hint-placeholder-count="4">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h2 style="margin:0;font-size:17px;font-weight:600">{{ sec.title }}</h2><span style="font-size:13px;color:#6b6d72">{{ sec.desc }}</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+        <sc-for list="{{ sec.items }}" as="pv" hint-placeholder-count="3">
+          <div style="background:#fff;border:1px solid {{ pv.bd }};border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(20,20,25,.04);opacity:{{ pv.op }}">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:40px;height:40px;border-radius:11px;background:{{ pv.monoBg }};color:#fff;display:grid;place-items:center;font-family:'Geist Mono',monospace;font-size:12.5px;font-weight:500;flex:none">{{ pv.mono }}</div>
+              <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0"><span style="font-weight:600;font-size:15px">{{ pv.name }}</span><span style="font-size:12px;color:#6b6d72">{{ pv.tier }}</span></div>
+              <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:500;background:{{ pv.sbg }};color:{{ pv.sfg }};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>{{ pv.statusLabel }}</span>
+            </div>
+            <sc-if value="{{ pv.configured }}">
+              <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:12.5px;padding:12px;border-radius:10px;background:#f8f7f5">
+                <span style="color:#8a8c91">Model</span><span style="font-family:'Geist Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pv.model }}</span>
+                <span style="color:#8a8c91">API key</span><span style="font-family:'Geist Mono',monospace">{{ pv.key }}</span>
+                <span style="color:#8a8c91">Last test</span><span style="font-family:'Geist Mono',monospace;color:{{ pv.testColor }}">{{ pv.test }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ pv.unconfigured }}"><div style="font-size:12.5px;color:#6b6d72;line-height:1.5;padding:12px;border-radius:10px;border:1px dashed #e1e0dc">Not connected. Add an API key to use this provider.</div></sc-if>
+            <div style="display:flex;gap:8px;margin-top:auto">
+              <button onClick="{{ pv.onCfg }}" style="flex:1;height:34px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer">{{ pv.cfgLabel }}</button>
+              <sc-if value="{{ pv.configured }}"><button onClick="{{ pv.onTest }}" style="flex:1;height:34px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px"><i class="{{ pv.testIcon }}" style="font-size:13px;display:inline-block;animation:{{ pv.testAnim }}"></i>{{ pv.testLabel }}</button>
+              <button onClick="{{ pv.onToggle }}" style="height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;color:{{ pv.toggleColor }}">{{ pv.toggleLabel }}</button></sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</sc-if>
+
+  </div>
+</main>
+
+<sc-if value="{{ cfgOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeCfg }}" style="position:fixed;inset:0;background:rgba(10,10,12,.4);z-index:60"></div>
+<div style="position:fixed;top:0;right:0;bottom:0;width:440px;max-width:100%;background:#fff;z-index:61;display:flex;flex-direction:column;box-shadow:-20px 0 50px rgba(0,0,0,.15)">
+  <div style="display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid #f0efec">
+    <div style="width:38px;height:38px;border-radius:10px;background:#17181a;color:#fff;display:grid;place-items:center;font-family:'Geist Mono',monospace;font-size:12px">{{ cfg.mono }}</div>
+    <div style="display:flex;flex-direction:column;flex:1;line-height:1.3"><span style="font-weight:600;font-size:16px">Configure {{ cfg.name }}</span><span style="font-size:12.5px;color:#6b6d72">{{ cfg.cat }} AI · {{ cfg.tier }}</span></div>
+    <button onClick="{{ closeCfg }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer"><i class="icon-x" style="font-size:15px"></i></button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:18px">
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">API key</span><input type="password" defaultValue="{{ cfg.keyRaw }}" placeholder="Paste your API key" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font-family:'Geist Mono',monospace;font-size:13px;outline:none;width:100%"><span style="font-size:12px;color:#8a8c91">Stored encrypted on your server. Never sent to Reelsmith.</span></label>
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Base URL</span><input defaultValue="{{ cfg.url }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font-family:'Geist Mono',monospace;font-size:13px;outline:none;width:100%"></label>
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Default model</span><select style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font-family:'Geist Mono',monospace;font-size:13px;background:#fff"><sc-for list="{{ cfg.models }}" as="o"><option>{{ o }}</option></sc-for></select></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Timeout (s)</span><input defaultValue="60" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font-family:'Geist Mono',monospace;font-size:13px;outline:none;width:100%"></label>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Priority</span><select style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13px;background:#fff"><option>Primary</option><option>Fallback</option></select></label>
+    </div>
+    <div style="display:flex;gap:12px;padding:14px;border-radius:12px;background:#f6f5f2;font-size:12.5px;line-height:1.5;color:#55575c"><i class="icon-info" style="font-size:16px;margin-top:1px"></i><span>If this provider fails or hits a rate limit, jobs fall back to the next connected provider in the same category.</span></div>
+  </div>
+  <div style="display:flex;gap:10px;padding:16px 22px;border-top:1px solid #f0efec">
+    <button onClick="{{ closeCfg }}" style="flex:1;height:42px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;cursor:pointer">Cancel</button>
+    <button onClick="{{ saveCfg }}" style="flex:1;height:42px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer">Save &amp; connect</button>
+  </div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;sidebarTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;create&quot;,&quot;editor&quot;,&quot;render&quot;,&quot;library&quot;,&quot;templates&quot;,&quot;brand&quot;,&quot;providers&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  F = ['#23343f','#4a3b31','#33413a','#3d3447','#5a4a30','#27403f','#4a2f33','#30384a','#41392c','#2d3b2d'];
+  ST = {Completed:['oklch(0.42 0.12 150)','oklch(0.95 0.04 150)'],Processing:['oklch(0.45 0.13 250)','oklch(0.95 0.03 250)'],Failed:['oklch(0.5 0.18 25)','oklch(0.95 0.035 25)'],Draft:['#55575c','#efefec']};
+  WORDS = 'Stay hydrated all day without even thinking about it'.split(' ');
+  VIDEOS = [
+    ['Spring Collection Launch','0:45','Completed','Sep 23, 2026','Instagram Reels','9:16'],
+    ['Smart Bottle — Hydration Tips','0:30','Processing','Sep 23, 2026','TikTok','9:16'],
+    ['Q3 Product Walkthrough','2:10','Completed','Sep 21, 2026','YouTube','16:9'],
+    ['Open House: 42 Elm Street','1:05','Completed','Sep 20, 2026','YouTube Shorts','9:16'],
+    ['Onboarding Explainer v2','1:40','Failed','Sep 19, 2026','YouTube','16:9'],
+    ['Black Friday Teaser','0:15','Draft','Sep 18, 2026','Instagram Reels','9:16'],
+    ['Customer Story: Northwind','1:20','Completed','Sep 16, 2026','LinkedIn','1:1'],
+    ['5 Habits of Productive Teams','0:58','Completed','Sep 14, 2026','TikTok','9:16'],
+    ['Feature Drop: Auto-Captions','0:35','Processing','Sep 13, 2026','YouTube Shorts','9:16'],
+    ['Webinar Recap — September','3:05','Draft','Sep 11, 2026','YouTube','16:9'],
+    ['Summer Sale Carousel','0:20','Completed','Sep 09, 2026','Instagram Reels','4:5'],
+    ['History of Coffee in 60s','1:00','Completed','Sep 06, 2026','TikTok','9:16']
+  ].map((v,i)=>({id:i,name:v[0],dur:v[1],status:v[2],date:v[3],platform:v[4],ratio:v[5],c:this.F[i%10],ts:12-i}));
+  TPL = [['Hook · Story · Offer','TikTok','0:30','9:16'],['Product Spotlight','Product Ads','0:20','9:16'],['Listing Walkthrough','Real Estate','1:00','16:9'],['Feature Launch','SaaS Ads','0:45','16:9'],['Top 5 Countdown','Faceless Content','0:58','9:16'],['Mini Lesson','Education','1:30','16:9'],['UGC Testimonial','Instagram Reels','0:25','9:16'],['Explainer in 3 Acts','Explainer','1:15','16:9'],['Flash Sale','Ecommerce','0:15','1:1'],['Channel Intro','YouTube','0:40','16:9'],['Quick Tip','YouTube Shorts','0:30','9:16'],['Before / After','Ecommerce','0:20','4:5'],['Market Update','Real Estate','0:50','9:16'],['Story Narration','Faceless Content','1:00','9:16'],['Pain · Solution · Proof','SaaS Ads','0:35','9:16'],['Course Trailer','Education','0:45','16:9']];
+  VOICES = [['Marcus','Male','English (US)','American',['Narrator','Professional']],['Ava','Female','English (US)','American',['Energetic']],['Theo','Male','English (UK)','British',['Storytelling','Calm']],['Priya','Female','English (IN)','Indian',['Professional']],['Lena','Female','German','Standard',['Calm','Narrator']],['Diego','Male','Spanish','Mexican',['Energetic']],['Sofia','Female','English (AU)','Australian',['Storytelling']],['Noah','Male','English (US)','American',['Calm','Professional']],['Camille','Female','French','Parisian',['Narrator']]];
+  MODELS = {Text:['llama-3.3-70b-instruct:free','deepseek-chat-v3:free','gemini-2.0-flash','gpt-4o-mini'],Image:['flux-1-schnell','stable-diffusion-xl','sdxl-lightning'],Video:['ltx-video','wan-2.1-t2v','hunyuan-video'],Voice:['en-US-Neural','en_US-lessac','multilingual-v2']};
+  mkProv = (id,cat,name,mono,tier,status,model,key,url) => ({id,cat,name,mono,tier,status,model,key,url:url||'https://api.example.com/v1',test:status==='connected'?'OK · 380 ms':'—'});
+  state = {
+    w: typeof window !== 'undefined' ? window.innerWidth : 1400,
+    screen: (typeof localStorage !== 'undefined' && localStorage.getItem('rs_screen')) || this.props.startScreen || 'dashboard',
+    drawer:false, step:0,
+    idea:{topic:'5 ways Hydra keeps you hydrated', tone:'Friendly', platform:'TikTok', dur:'30s', ratio:'9:16'},
+    script:{title:'5 ways Hydra keeps you hydrated', hook:'Ever get to 3pm and realize you\'ve barely had a sip of water?', body:'Hydra glows when it\'s time to drink, so you never have to remember. Every sip syncs to your phone and tracks your daily goal. And it keeps water ice-cold for 24 hours, wherever the day takes you.', cta:'Stay hydrated without thinking about it. Get yours at hydra.co.'},
+    editScript:false, regen:false,
+    scenes:[
+      ['Close-up of a matte teal smart bottle on a sunlit desk, soft morning light','Ever get to 3pm and realize you\'ve barely had a sip of water?','Barely had a sip?',5,'done'],
+      ['Bottle cap glowing gently as a reminder, shallow depth of field','Hydra glows when it\'s time to drink, so you never have to remember.','It reminds you',6,'done'],
+      ['Phone screen showing a daily hydration ring filling up','Every sip syncs to your phone and tracks your daily goal.','Tracks every sip',6,'none'],
+      ['Hiker on a ridge at golden hour, bottle clipped to backpack','Ice-cold for 24 hours, wherever the day takes you.','Cold for 24 hours',6,'none'],
+      ['Product hero shot on a clean background with brand logo','Stay hydrated without thinking about it. Get yours at hydra.co.','Shop at hydra.co',7,'none']
+    ].map((s,i)=>({id:i+1,prompt:s[0],narration:s[1],caption:s[2],dur:s[3],v:s[4],vp:0,src:'AI Image',c:['#2f4b4b','#3d3447','#30384a','#5a4a30','#23343f'][i],tr:'Fade',rg:false})),
+    nextId:6, dragId:null, overId:null, editSceneId:null,
+    voiceCat:'All', voice:'Theo', playing:null,
+    cap:{font:'Archivo Black', size:44, pos:'Bottom', anim:'Karaoke', color:'#ffffff', bg:'None', hl:'#ffd23f', hlStyle:'Color'}, wi:0,
+    renderP:0, rendering:false,
+    edSel:0, edT:0, edPlay:false, edTab:'Scenes', track:0,
+    libFilter:'All', q:'', sort:'Newest', tplCat:'All',
+    brand:{name:'Hydra', web:'hydra.co', cta:'Shop now at hydra.co', c0:'#0e3b43', c1:'#2fb3a5', c2:'#f4efe6', heading:'Archivo Black', body:'DM Sans', wm:true, wmPos:'Top right'},
+    prov:[
+      this.mkProv('or','Text','OpenRouter','OR','Free models available','connected','llama-3.3-70b-instruct:free','sk-or-v1-••••••••3f9a','https://openrouter.ai/api/v1'),
+      this.mkProv('gem','Text','Google Gemini','GG','Free tier','connected','gemini-2.0-flash','AIza••••••••Qk2m'),
+      this.mkProv('groq','Text','Groq','GQ','Free tier','off'),
+      this.mkProv('cft','Text','Cloudflare Workers AI','CF','Free daily quota','disabled','llama-3.1-8b-instruct','••••••••a71c'),
+      this.mkProv('hft','Text','Hugging Face','HF','Free inference','off'),
+      this.mkProv('oai','Text','Custom OpenAI-compatible','{ }','Any compatible endpoint','off'),
+      this.mkProv('cfi','Image','Cloudflare Workers AI','CF','Free daily quota','connected','flux-1-schnell','••••••••a71c'),
+      this.mkProv('hfi','Image','Hugging Face','HF','Free inference','connected','stable-diffusion-xl','hf_••••••••Wd8'),
+      this.mkProv('stab','Image','Stability AI','SA','Paid','off'),
+      this.mkProv('repi','Image','Replicate','RP','Pay as you go','off'),
+      this.mkProv('fal','Video','Fal.ai','FA','Pay as you go','connected','ltx-video','fal_••••••••9c1e'),
+      this.mkProv('repv','Video','Replicate','RP','Pay as you go','off'),
+      this.mkProv('run','Video','Runway','RW','Paid','off'),
+      this.mkProv('luma','Video','Luma','LM','Paid','off'),
+      this.mkProv('edge','Voice','Edge TTS','ET','Free · no key needed','connected','en-US-Neural','not required'),
+      this.mkProv('piper','Voice','Piper','PI','Self-hosted','connected','en_US-lessac','local'),
+      this.mkProv('el','Voice','ElevenLabs','EL','Paid · voice cloning','off'),
+      this.mkProv('oat','Voice','OpenAI TTS','OA','Paid','off')
+    ],
+    cfg:null, testing:null
+  };
+
+  componentDidMount() {
+    this.onResize = () => this.setState({w: window.innerWidth});
+    window.addEventListener('resize', this.onResize);
+    this.tk = 0;
+    this.iv = setInterval(this.tick, 100);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); clearInterval(this.iv); }
+
+  total() { return this.state.scenes.reduce((a,s)=>a+s.dur,0); }
+  fmt(t) { t=Math.round(t); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
+
+  tick = () => {
+    const s = this.state, up = {}; this.tk++;
+    if (s.screen==='create' && s.step===5 && this.tk%4===0) up.wi = (s.wi+1)%this.WORDS.length;
+    if (s.screen==='editor' && s.edPlay) { let t=s.edT+0.1; if (t>=this.total()) { t=0; up.edPlay=false; } up.edT=t; }
+    if (s.rendering) { const p=Math.min(100,s.renderP+0.7); up.renderP=p; if (p>=100) up.rendering=false; }
+    if (s.scenes.some(x=>x.v==='loading')) up.scenes = s.scenes.map(x=>x.v!=='loading'?x:(x.vp>=100?{...x,v:'done'}:{...x,vp:Math.min(100,x.vp+3)}));
+    if (Object.keys(up).length) this.setState(up);
+  };
+
+  go = (k) => { this.setState({screen:k, drawer:false}); try{localStorage.setItem('rs_screen',k)}catch(e){} if (typeof window!=='undefined') window.scrollTo(0,0); };
+  setIdea = (k,v) => this.setState(s=>({idea:{...s.idea,[k]:v}}));
+  setCap = (k,v) => this.setState(s=>({cap:{...s.cap,[k]:v}}));
+  setBrand = (k,v) => this.setState(s=>({brand:{...s.brand,[k]:v}}));
+  updScene = (id,patch) => this.setState(s=>({scenes:s.scenes.map(x=>x.id===id?{...x,...patch}:x)}));
+
+  chips(list,cur,fn) { return list.map(l=>{const a=l===cur; return {label:l,on:()=>fn(l),bg:a?'#17181a':'#fff',fg:a?'#fff':'#3a3c40',bd:a?'#17181a':'#e1e0dc',segBg:a?'#fff':'transparent',segSh:a?'0 1px 2px rgba(0,0,0,.08)':'none',tileBg:a?'#f6f5f2':'#fff'};}); }
+
+  renderVals() {
+    const s = this.state, P = this.props;
+    const isMobile = s.w < 860, isNarrow = s.w < 1180;
+    const dark = (P.sidebarTheme ?? 'dark') === 'dark';
+    const sb = dark ? {bg:'#0f1012',fg:'#b7b8bd',strong:'#fff',line:'#24262b',badge:'#24262b',act:'#1f2126',actFg:'#fff'} : {bg:'#fff',fg:'#55575c',strong:'#17181a',line:'#e8e7e3',badge:'#f1f0ed',act:'#f1f0ed',actFg:'#17181a'};
+    sb.pos = isMobile ? 'fixed' : 'sticky';
+    sb.tf = isMobile && !s.drawer ? 'translateX(-100%)' : 'none';
+    const scr = s.screen==='projects' ? 'library' : s.screen;
+    const nav = (k,label,icon,badge) => ({label,icon:'icon-'+icon,go:()=>this.go(k),bg:s.screen===k?sb.act:'transparent',fg:s.screen===k?sb.actFg:sb.fg,hasBadge:!!badge,badge});
+    const navGroups = [
+      {title:'Create',items:[nav('dashboard','Dashboard','layout-dashboard'),nav('create','Create Video','circle-plus'),nav('projects','My Projects','folder'),nav('library','My Videos','film','3'),nav('templates','Templates','layout-template')]},
+      {title:'Assets',items:[nav('media','Media Library','images'),nav('brand','Brand Kit','palette')]},
+      {title:'Configure',items:[nav('providers','AI Providers','plug'),nav('credits','Credits','coins'),nav('usage','Usage','chart-column'),nav('api','API','code'),nav('settings','Settings','settings'),nav('support','Support','life-buoy')]}
+    ];
+    const titles = {dashboard:'Dashboard',create:'Create Video',editor:'Video Editor',render:'Render',library:'My Videos',projects:'My Projects',templates:'Templates',brand:'Brand Kit',providers:'AI Providers'};
+    const g = {}; ['dashboard','create','library','templates','providers','editor','brand'].forEach(k=>g[k]=()=>this.go(k));
+    g.create = () => { this.setState({step:0}); this.go('create'); };
+    const scrKnown = ['dashboard','create','render','editor','library','templates','brand','providers'];
+    const cur = scrKnown.includes(scr) ? scr : 'dashboard';
+    const sFlags = {}; scrKnown.forEach(k=>sFlags[k]=cur===k);
+
+    const vid = v => ({...v, sfg:this.ST[v.status][0], sbg:this.ST[v.status][1], processing:v.status==='Processing', failed:v.status==='Failed', completed:v.status==='Completed', open:()=>this.go('editor')});
+    const total = this.total();
+
+    // wizard
+    const stepNames = ['Idea','Script','Scenes','Visuals','Voice','Captions','Render'];
+    const steps = stepNames.map((l,i)=>{const a=i===s.step, d=i<s.step; return {label:l,n:i+1,done:d,notDone:!d,go:()=>i===6?this.startRender():this.setState({step:i}),bg:a?'#f3f2ef':'transparent',fg:a||d?'#17181a':'#8a8c91',fw:a?600:500,dotBg:a?'oklch(0.58 0.19 35)':d?'#17181a':'#efeeea',dotFg:a||d?'#fff':'#8a8c91'};});
+    const stFlags = {idea:s.step===0,script:s.step===1,scenes:s.step===2,visuals:s.step===3,voice:s.step===4,captions:s.step===5};
+    const ratioDims = {'9:16':['16px','28px'],'1:1':['24px','24px'],'4:5':['22px','27px'],'16:9':['32px','18px']};
+    const ratioChips = this.chips(Object.keys(ratioDims),s.idea.ratio,v=>this.setIdea('ratio',v)).map(c=>({...c,w:ratioDims[c.label][0],h:ratioDims[c.label][1]}));
+    const words = (s.script.hook+' '+s.script.body+' '+s.script.cta).trim().split(/\s+/).length;
+    const scriptParts = [['Hook','hook','0:00 – 0:04','oklch(0.58 0.19 35)'],['Body','body','0:04 – 0:26','#17181a'],['Call to action','cta','0:26 – 0:30','oklch(0.6 0.12 250)']].map(p=>({label:p[0],text:s.script[p[1]],time:p[2],color:p[3],set:e=>{const v=e.target.value; this.setState(st=>({script:{...st.script,[p[1]]:v}}));}}));
+    const scriptSet = {title:e=>{const v=e.target.value; this.setState(st=>({script:{...st.script,title:v}}));}};
+
+    const sceneRows = s.scenes.map((x,i)=>({...x, num:String(i+1).padStart(2,'0'), durLabel:x.dur+'s', editing:s.editSceneId===x.id, view:s.editSceneId!==x.id, editBg:s.editSceneId===x.id?'#f1f0ed':'#fff',
+      op:s.dragId===x.id?0.45:1, bd:s.overId===x.id&&s.dragId!==x.id?'#17181a':'#e8e7e3',
+      onDragStart:e=>{e.dataTransfer.effectAllowed='move'; this.setState({dragId:x.id});},
+      onDragOver:e=>{e.preventDefault(); if (s.overId!==x.id) this.setState({overId:x.id});},
+      onDrop:e=>{e.preventDefault(); this.setState(st=>{const arr=[...st.scenes]; const from=arr.findIndex(a=>a.id===st.dragId); const to=arr.findIndex(a=>a.id===x.id); if(from<0||to<0) return {dragId:null,overId:null}; const [m]=arr.splice(from,1); arr.splice(to,0,m); return {scenes:arr,dragId:null,overId:null};});},
+      onDragEnd:()=>this.setState({dragId:null,overId:null}),
+      onRegen:()=>{this.updScene(x.id,{rg:true}); setTimeout(()=>this.updScene(x.id,{rg:false}),1100);},
+      onEdit:()=>this.setState({editSceneId:s.editSceneId===x.id?null:x.id}),
+      onDup:()=>this.setState(st=>{const arr=[...st.scenes]; const i2=arr.findIndex(a=>a.id===x.id); arr.splice(i2+1,0,{...x,id:st.nextId}); return {scenes:arr,nextId:st.nextId+1};}),
+      onDel:()=>this.setState(st=>({scenes:st.scenes.length>1?st.scenes.filter(a=>a.id!==x.id):st.scenes})),
+      setPrompt:e=>this.updScene(x.id,{prompt:e.target.value}), setNarr:e=>this.updScene(x.id,{narration:e.target.value})
+    }));
+    const visRows = sceneRows.map(x=>{const isVid=x.src==='AI Video'; return {...x, done:x.v==='done', empty:x.v==='none', loading:x.v==='loading', pct:x.vp+'%', pctLabel:Math.round(x.vp)+'%',
+      thumbBg:x.v==='done'?x.c:x.v==='loading'?'#1d1f23':'#f6f5f2', thumbBd:x.v==='none'?'#d6d4ce':'transparent', kind:isVid?'AI video':'AI image',
+      tabs:[['AI Image','image'],['AI Video','clapperboard'],['Upload','upload'],['Media Library','images']].map(t=>({label:t[0],icon:'icon-'+t[1],on:()=>this.updScene(x.id,{src:t[0]}),bg:x.src===t[0]?'#fff':'transparent',sh:x.src===t[0]?'0 1px 2px rgba(0,0,0,.08)':'none'})),
+      isAI:x.src==='AI Image'||isVid, isUpload:x.src==='Upload', isLib:x.src==='Media Library',
+      provs:isVid?['Fal.ai']:['Cloudflare Workers AI','Hugging Face','OpenRouter'], models:isVid?this.MODELS.Video:this.MODELS.Image,
+      genLabel:x.v==='done'?'Regenerate':'Generate Visual', cost:isVid?'≈ 8 credits · ~40 s on Fal.ai':'≈ 1 credit · free tier on Cloudflare',
+      onGen:()=>this.updScene(x.id,{v:'loading',vp:0})};});
+
+    const cats = ['All','Male','Female','Narrator','Professional','Energetic','Calm','Storytelling'];
+    const voiceList = this.VOICES.filter(v=>s.voiceCat==='All'||v[1]===s.voiceCat||v[4].includes(s.voiceCat)).map((v,i)=>{const sel=s.voice===v[0], pl=s.playing===v[0];
+      return {name:v[0],lang:v[2],accent:v[3],tags:[v[1],...v[4]],init:v[0][0],c:this.F[(v[0].charCodeAt(0))%10],sel,bd:sel?'#17181a':'#e8e7e3',sh:sel?'0 6px 20px rgba(20,20,25,.08)':'none',
+        selBg:sel?'#17181a':'#f1f0ed',selFg:sel?'#fff':'#17181a',selLabel:sel?'Selected':'Select',playIcon:pl?'icon-pause':'icon-play',playLabel:pl?'Playing':'Preview',
+        bars:Array.from({length:28},(_,j)=>({h:(30+Math.abs(Math.sin((j+1)*(i+2)*0.7))*70)+'%',c:pl?'oklch(0.58 0.19 35)':'#dcdad4',anim:pl?`rs-wave ${0.6+(j%5)*0.12}s ease-in-out ${j*0.03}s infinite`:'none'})),
+        onPlay:()=>{clearTimeout(this.pt); if(pl){this.setState({playing:null});return;} this.setState({playing:v[0]}); this.pt=setTimeout(()=>this.setState({playing:null}),3500);},
+        onSel:()=>this.setState({voice:v[0]})};});
+
+    // captions
+    const cap = s.cap;
+    const chunk = Math.floor(s.wi/3)*3;
+    const capWords = this.WORDS.slice(chunk,chunk+3).map((w,k)=>{const idx=chunk+k, act=idx===s.wi, past=idx<s.wi;
+      let hl = cap.anim==='Karaoke' ? (act||past) : cap.anim==='None' ? false : act;
+      const st = cap.hlStyle; let color=cap.color, bg='transparent', pad='0 2px', ul='0';
+      if (hl && st==='Color') color=cap.hl; if (hl && st==='Box') {bg=cap.hl; color='#111'; pad='0 6px';} if (hl && st==='Underline') ul='4px solid '+cap.hl;
+      if (cap.bg==='Box' && !(hl&&st==='Box')) {bg='rgba(0,0,0,.6)'; pad='0 6px';}
+      return {w,color,bg,pad,ul,tf:act&&cap.anim==='Pop'?'scale(1.14)':act&&cap.anim==='Bounce'?'translateY(-6px)':'none',op:cap.anim==='Typewriter'&&idx>s.wi?0:1};});
+    const fontsF = {'Archivo Black':"'Archivo Black',sans-serif",'Bebas Neue':"'Bebas Neue',sans-serif",'DM Sans':"'DM Sans',sans-serif",'Space Grotesk':"'Space Grotesk',sans-serif",'Geist':"'Geist',sans-serif"};
+    const swatch = (list,cur,k) => list.map(v=>({v,on:()=>this.setCap(k,v),ring:v===cur?'0 0 0 2px #fff,0 0 0 4px #17181a':'none'}));
+
+    // render
+    const p = s.renderP, th=[6,13,22,30,38];
+    const rp = Math.max(0,Math.min(100,(p-38)/62*100));
+    const stages = ['Script','Scenes','Visuals','Voice','Captions','Rendering'].map((l,i)=>{
+      const done = i<5 ? p>=th[i] : p>=100; const active = !done && (i===0 || (i<5 ? p>=th[i-1] : p>=38));
+      return {label:i===5?`Rendering ${Math.round(rp)}%`:l, icon:done?'icon-check':active?'icon-loader-circle':'icon-circle', anim:active?'rs-spin 1s linear infinite':'none',
+        bg:done?'oklch(0.95 0.04 150)':active?'oklch(0.95 0.03 45)':'#f3f2ef', fg:done?'oklch(0.45 0.12 150)':active?'oklch(0.58 0.19 35)':'#b3b4b8',
+        fw:active?600:500, tc:done||active?'#17181a':'#8a8c91', meta:['OpenRouter','5 scenes','Cloudflare · Fal.ai','Edge TTS','Karaoke · Archivo','FFmpeg · H.264'][i]};});
+    const remain = Math.max(0,Math.round((100-p)/0.7/10));
+
+    // editor
+    const edSel = Math.min(s.edSel, s.scenes.length-1);
+    let acc=0, playIdx=0; s.scenes.forEach((x,i)=>{ if (s.edT>=acc) playIdx=i; acc+=x.dur; });
+    const shownIdx = s.edPlay ? playIdx : edSel;
+    const startOf = i => s.scenes.slice(0,i).reduce((a,x)=>a+x.dur,0);
+    const cs = s.scenes[shownIdx], es = s.scenes[edSel];
+    const edScenes = s.scenes.map((x,i)=>({...x,num:String(i+1).padStart(2,'0'),durLabel:x.dur+'s',bd:i===edSel?'#17181a':'transparent',bg:i===edSel?'#f6f5f2':'transparent',tlBd:i===shownIdx?'#17181a':'transparent',on:()=>this.setState({edSel:i,edT:startOf(i),edPlay:false})}));
+    const ruler = []; for (let t=0;t<=total;t+=5) ruler.push({left:(t/total*100)+'%',label:this.fmt(t)});
+    const tracks = [['Uplifting Corporate','Bright','0:45'],['Soft Focus','Calm','1:10'],['Night Drive','Moody','2:05'],['Morning Run','Energetic','1:30']].map((t,i)=>({name:t[0],mood:t[1],len:t[2],bd:i===s.track?'#17181a':'#e8e7e3',bg:i===s.track?'#f6f5f2':'#fff'}));
+
+    // library
+    const filt = s.screen==='projects'?'Drafts':s.libFilter;
+    const statusOf = {All:null,Completed:'Completed',Processing:'Processing',Failed:'Failed',Drafts:'Draft'};
+    let lib = this.VIDEOS.filter(v=>(!statusOf[filt]||v.status===statusOf[filt]) && v.name.toLowerCase().includes(s.q.toLowerCase()));
+    const secs = d => {const [m,x]=d.split(':'); return +m*60+ +x;};
+    lib = [...lib].sort((a,b)=>s.sort==='Oldest'?a.ts-b.ts:s.sort==='Name'?a.name.localeCompare(b.name):s.sort==='Duration'?secs(b.dur)-secs(a.dur):b.ts-a.ts);
+    const libTabs = this.chips(['All','Completed','Processing','Failed','Drafts'],filt,v=>this.setState({libFilter:v,screen:'library'})).map(c=>({...c,count:this.VIDEOS.filter(v=>!statusOf[c.label]||v.status===statusOf[c.label]).length}));
+
+    // templates
+    const tcats = ['All','TikTok','Instagram Reels','YouTube Shorts','YouTube','Product Ads','SaaS Ads','Real Estate','Ecommerce','Explainer','Education','Faceless Content'];
+    const tdim = {'9:16':[96,170],'16:9':[200,113],'1:1':[150,150],'4:5':[128,160]};
+    const tplItems = this.TPL.filter(t=>s.tplCat==='All'||t[1]===s.tplCat).map((t,i)=>({name:t[0],cat:t[1],dur:t[2],ratio:t[3],c:this.F[(i*3)%10],fw:tdim[t[3]][0]+'px',fh:tdim[t[3]][1]+'px'}));
+
+    // brand
+    const b = s.brand;
+    const wmMap = {'Top right':['top','right'],'Top left':['top','left'],'Bottom right':['bottom','right'],'Bottom left':['bottom','left']};
+    const bset = {}; ['name','web','cta','heading','body','wmPos'].forEach(k=>bset[k]=e=>this.setBrand(k,e.target.value));
+
+    // providers
+    const catMeta = [['Text','Text AI','Scripts, hooks and scene prompts','type'],['Image','Image AI','Scene stills and thumbnails','image'],['Video','Video AI','Motion clips from prompts or stills','clapperboard'],['Voice','Voice AI','Narration and voiceover','mic']];
+    const stMap = {connected:['Connected','oklch(0.42 0.12 150)','oklch(0.95 0.04 150)'],off:['Not configured','#6b6d72','#f1f0ed'],disabled:['Disabled','oklch(0.5 0.13 70)','oklch(0.95 0.05 85)']};
+    const provItem = pv => {const m=stMap[pv.status], conf=pv.status!=='off', testing=s.testing===pv.id;
+      return {...pv, statusLabel:m[0], sfg:m[1], sbg:m[2], configured:conf, unconfigured:!conf, bd:pv.status==='connected'?'#e1e0dc':'#e8e7e3', op:pv.status==='disabled'?0.72:1,
+        monoBg:pv.status==='connected'?'#17181a':'#8a8c91', cfgLabel:conf?'Configure':'Connect', testLabel:testing?'Testing…':'Test connection', testIcon:testing?'icon-loader-circle':'icon-activity', testAnim:testing?'rs-spin 1s linear infinite':'none',
+        testColor:pv.test.startsWith('OK')?'oklch(0.45 0.12 150)':'#6b6d72', toggleLabel:pv.status==='disabled'?'Enable':'Disable', toggleColor:pv.status==='disabled'?'oklch(0.45 0.12 150)':'oklch(0.5 0.18 25)',
+        onCfg:()=>this.setState({cfg:pv.id}),
+        onTest:()=>{this.setState({testing:pv.id}); setTimeout(()=>this.setState(st=>({testing:null,prov:st.prov.map(q=>q.id===pv.id?{...q,test:'OK · '+(280+Math.floor(Math.random()*300))+' ms · just now'}:q)})),1300);},
+        onToggle:()=>this.setState(st=>({prov:st.prov.map(q=>q.id===pv.id?{...q,status:q.status==='disabled'?'connected':'disabled'}:q)}))};};
+    const provSections = catMeta.map(c=>({title:c[1],desc:c[2],items:s.prov.filter(p2=>p2.cat===c[0]).map(provItem)}));
+    const provSummary = catMeta.map(c=>{const n=s.prov.filter(p2=>p2.cat===c[0]&&p2.status==='connected').length; return {title:c[1],icon:'icon-'+c[3],line:n+' connected'};});
+    const cp = s.prov.find(p2=>p2.id===s.cfg);
+
+    return {
+      isMobile, notMobile:!isMobile, sb, navGroups, drawerOverlay:isMobile&&s.drawer,
+      openDrawer:()=>this.setState({drawer:true}), closeDrawer:()=>this.setState({drawer:false}),
+      pageTitle:titles[s.screen]||'Dashboard', hdrPad:isMobile?'16px':'32px', pad:isMobile?'20px 16px 48px':'28px 32px 56px', maxW:cur==='editor'?'1600px':'1320px',
+      s:sFlags, go:g,
+      dashCols:isNarrow?'minmax(0,1fr)':'minmax(0,1fr) 320px', sideCols:isNarrow?'minmax(0,1fr)':'minmax(0,1fr) 340px', capCols:s.w<1000?'minmax(0,1fr)':'minmax(0,1fr) 340px',
+      stats:[
+        {label:'Videos Created',value:'248',icon:'icon-film',sub:'Since Jan 2026',subColor:'#8a8c91'},
+        {label:'Videos This Month',value:'36',icon:'icon-calendar',sub:'↑ 12% vs August',subColor:'oklch(0.45 0.12 150)'},
+        {label:'Credits Remaining',value:'2,480',icon:'icon-coins',bar:true,pct:'49.6%',barColor:'oklch(0.58 0.19 35)',sub:'of 5,000 · renews Oct 1',subColor:'#8a8c91'},
+        {label:'Processing',value:'3',icon:'icon-loader',live:true,sub:'Next ready in ~2 min',subColor:'#8a8c91'},
+        {label:'Storage Used',value:'18.4',unit:'GB',icon:'icon-hard-drive',bar:true,pct:'36.8%',barColor:'#17181a',sub:'of 50 GB',subColor:'#8a8c91'}
+      ],
+      quick:[
+        {title:'Create from Idea',desc:'Type a topic. AI writes the script and plans the scenes.',icon:'icon-lightbulb',go:g.create},
+        {title:'Create from Product',desc:'Turn product details and photos into an ad.',icon:'icon-shopping-bag',go:g.create},
+        {title:'Create from URL',desc:'Paste a blog post or landing page to repurpose.',icon:'icon-link',go:g.create},
+        {title:'Create from Template',desc:'Start from a proven structure for any platform.',icon:'icon-layout-template',go:g.templates}
+      ],
+      recent:this.VIDEOS.slice(0,6).map(vid),
+      stack:[{cat:'Text',name:'OpenRouter · free model',icon:'icon-type'},{cat:'Image',name:'Cloudflare Workers AI',icon:'icon-image'},{cat:'Video',name:'Fal.ai',icon:'icon-clapperboard'},{cat:'Voice',name:'Edge TTS',icon:'icon-mic'}],
+      idea:s.idea, setTopic:e=>this.setIdea('topic',e.target.value),
+      toneChips:this.chips(['Professional','Friendly','Bold','Playful','Calm','Inspirational'],s.idea.tone,v=>this.setIdea('tone',v)),
+      platChips:this.chips(['TikTok','Instagram Reels','YouTube Shorts','YouTube','LinkedIn'],s.idea.platform,v=>this.setIdea('platform',v)),
+      durChips:this.chips(['15s','30s','60s','90s'],s.idea.dur,v=>this.setIdea('dur',v)), ratioChips,
+      plan:[{step:'Script',via:'OpenRouter · llama-3.3-70b:free',icon:'icon-type'},{step:'Visuals',via:'Cloudflare · flux-1-schnell',icon:'icon-image'},{step:'Voice',via:'Edge TTS · en-US-Neural',icon:'icon-mic'},{step:'Render',via:'FFmpeg on your server',icon:'icon-server'}],
+      outputLine:`${s.idea.platform} · ${s.idea.ratio} · ${s.idea.dur} · ${s.idea.tone}`,
+      steps, st:stFlags, script:s.script, scriptParts, scriptSet, editScript:s.editScript, viewScript:!s.editScript, regen:s.regen, notRegen:!s.regen,
+      editBtn:s.editScript?{label:'Done editing',bg:'#17181a',fg:'#fff',bd:'#17181a'}:{label:'Edit Script',bg:'#fff',fg:'#17181a',bd:'#e1e0dc'},
+      toggleEditScript:()=>this.setState({editScript:!s.editScript}),
+      regenScript:()=>{this.setState({regen:true,editScript:false}); setTimeout(()=>this.setState({regen:false}),1400);},
+      wordCount:words, scriptDur:this.fmt(words/150*60),
+      sceneRows, sceneCount:s.scenes.length, totalLabel:this.fmt(total),
+      addScene:()=>this.setState(st=>({scenes:[...st.scenes,{id:st.nextId,prompt:'Describe what this scene should show',narration:'New narration line.',caption:'New caption',dur:5,v:'none',vp:0,src:'AI Image',c:this.F[st.nextId%10],tr:'Cut',rg:false}],nextId:st.nextId+1,editSceneId:st.nextId})),
+      visRows, visDone:s.scenes.filter(x=>x.v==='done').length, genAll:()=>this.setState(st=>({scenes:st.scenes.map(x=>x.v==='none'?{...x,v:'loading',vp:0}:x)})),
+      libPick:this.F.slice(0,5),
+      voiceCats:this.chips(cats,s.voiceCat,v=>this.setState({voiceCat:v})), voiceList,
+      cap, capWords, capFonts:this.chips(['Archivo Black','Bebas Neue','Space Grotesk','DM Sans'],cap.font,v=>this.setCap('font',v)).map(c=>({...c,ff:fontsF[c.label],bd:c.label===cap.font?'#17181a':'#e8e7e3'})),
+      setCapSize:e=>this.setCap('size',+e.target.value),
+      capPos:this.chips(['Top','Middle','Bottom'],cap.pos,v=>this.setCap('pos',v)), capBg:this.chips(['None','Box','Shadow'],cap.bg,v=>this.setCap('bg',v)),
+      capAnim:this.chips(['Karaoke','Pop','Bounce','Typewriter','None'],cap.anim,v=>this.setCap('anim',v)),
+      capHlStyle:this.chips(['Color','Box','Underline'],cap.hlStyle,v=>this.setCap('hlStyle',v)),
+      capColors:swatch(['#ffffff','#f4efe6','#ffd23f','#111111'],cap.color,'color'), capHls:swatch(['#ffd23f','#3ee08f','#ff6b4a','#5ab0ff'],cap.hl,'hl'),
+      capJustify:{Top:'flex-start',Middle:'center',Bottom:'flex-end'}[cap.pos], capFF:fontsF[cap.font], capPx:Math.round(cap.size*0.62)+'px',
+      capTT:cap.font==='Archivo Black'||cap.font==='Bebas Neue'?'uppercase':'none', capShadow:cap.bg==='Shadow'||cap.bg==='None'?'0 2px 10px rgba(0,0,0,.55)':'none',
+      capProg:((s.wi+1)/this.WORDS.length*100)+'%',
+      backOp:s.step===0?0.4:1, nextLabel:s.step===5?'Render video':'Continue',
+      prevStep:()=>s.step>0&&this.setState({step:s.step-1}), nextStep:()=>s.step===5?this.startRender():this.setState({step:s.step+1}),
+      renderActive:p<100, renderDone:p>=100, renderPct:Math.round(p)+'%', renderW:p+'%', stages, eta:remain>0?`About ${remain}s remaining`:'Finishing up…', goRender:()=>this.startRender(),
+      edCols:isNarrow?'minmax(0,1fr)':'240px minmax(0,1fr) 300px', edOrd:isNarrow?{left:3,center:1,right:2}:{left:1,center:2,right:3},
+      edTabs:['Scenes','Media','Music'].map(l=>({label:l,on:()=>this.setState({edTab:l}),bg:s.edTab===l?'#f1f0ed':'transparent'})),
+      edTab:{scenes:s.edTab==='Scenes',media:s.edTab==='Media',music:s.edTab==='Music'},
+      edScenes, tracks, trackName:tracks[s.track].name+' · '+tracks[s.track].mood,
+      edCur:{...cs, num:String(shownIdx+1).padStart(2,'0'), caption:(s.edPlay?cs:es).caption, narration:es.narration, durLabel:es.dur+'s', kind:cs.src==='AI Video'?'AI video':'AI image'},
+      edPrevH:isMobile?'380px':'440px', edHead:(s.edT/total*100)+'%', edTime:this.fmt(s.edT), edPlayIcon:s.edPlay?'icon-pause':'icon-play',
+      edTogglePlay:()=>this.setState({edPlay:!s.edPlay}),
+      edPrev:()=>{const i=Math.max(0,edSel-1); this.setState({edSel:i,edT:startOf(i),edPlay:false});},
+      edNext:()=>{const i=Math.min(s.scenes.length-1,edSel+1); this.setState({edSel:i,edT:startOf(i),edPlay:false});},
+      edSetCaption:e=>this.updScene(es.id,{caption:e.target.value}), edSetNarr:e=>this.updScene(es.id,{narration:e.target.value}),
+      edDurDown:()=>this.updScene(es.id,{dur:Math.max(2,es.dur-1)}), edDurUp:()=>this.updScene(es.id,{dur:Math.min(20,es.dur+1)}),
+      edTrans:this.chips(['Cut','Fade','Slide','Zoom'],es.tr,v=>this.updScene(es.id,{tr:v})),
+      edRegen:()=>{this.updScene(es.id,{c:this.F[Math.floor(Math.random()*10)]});},
+      libTitle:s.screen==='projects'?'My Projects':'My Videos', libTabs, libItems:lib.map(vid), libEmpty:lib.length===0, q:s.q, sort:s.sort,
+      setQ:e=>this.setState({q:e.target.value}), setSort:e=>this.setState({sort:e.target.value}), clearLib:()=>this.setState({q:'',libFilter:'All',screen:'library'}),
+      tplCats:this.chips(tcats,s.tplCat,v=>this.setState({tplCat:v})), tplItems,
+      brand:b, bset, brandInit:(b.name||'?')[0].toUpperCase(), brandHeadFF:fontsF[b.heading], brandBodyFF:fontsF[b.body],
+      brandColors:[['Primary','c0'],['Accent','c1'],['Text','c2']].map(c=>({label:c[0],v:b[c[1]],set:e=>this.setBrand(c[1],e.target.value)})),
+      wmCss:(()=>{const m=wmMap[b.wmPos],o={t:'auto',b:'auto',l:'auto',r:'auto'}; o[m[0][0]]='16px'; o[m[1][0]]='16px'; return o;})(), toggleWm:()=>this.setBrand('wm',!b.wm), wmTrack:b.wm?'#17181a':'#d6d4ce', wmKnob:b.wm?'21px':'3px',
+      provSections, provSummary, openCustom:()=>this.setState({cfg:'oai'}),
+      cfgOpen:!!cp, cfg:cp?{...cp, keyRaw:cp.status==='off'?'':'••••••••••••••••', models:this.MODELS[cp.cat]}:{models:[]},
+      closeCfg:()=>this.setState({cfg:null}),
+      saveCfg:()=>this.setState(st=>({cfg:null,prov:st.prov.map(q=>q.id===st.cfg?{...q,status:'connected',model:q.model||this.MODELS[q.cat][0],key:q.key||'••••••••'+Math.random().toString(36).slice(2,6),test:'OK · 342 ms · just now'}:q)}))
+    };
+  }
+
+  startRender() { this.setState({renderP:0, rendering:true}); this.go('render'); }
+}
+</script>
+</body>
+</html>

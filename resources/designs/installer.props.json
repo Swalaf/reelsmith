@@ -1,0 +1,9 @@
+{
+  "startStep": {
+    "editor": "int",
+    "default": 0,
+    "min": 0,
+    "max": 10,
+    "tsType": "number"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "startScreen": {
+    "editor": "enum",
+    "options": [
+      "home",
+      "workspace",
+      "workflows",
+      "builder",
+      "runs",
+      "cinematic",
+      "characters",
+      "styles",
+      "agents",
+      "repurpose",
+      "api"
+    ],
+    "default": "home",
+    "tsType": "string"
+  }
+}

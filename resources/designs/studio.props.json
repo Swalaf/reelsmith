@@ -1,0 +1,26 @@
+{
+  "sidebarTheme": {
+    "editor": "enum",
+    "options": [
+      "dark",
+      "light"
+    ],
+    "default": "dark",
+    "tsType": "'dark'|'light'"
+  },
+  "startScreen": {
+    "editor": "enum",
+    "options": [
+      "dashboard",
+      "create",
+      "editor",
+      "render",
+      "library",
+      "templates",
+      "brand",
+      "providers"
+    ],
+    "default": "dashboard",
+    "tsType": "string"
+  }
+}

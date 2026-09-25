@@ -1,0 +1,24 @@
+{
+  "startScreen": {
+    "editor": "enum",
+    "options": [
+      "overview",
+      "users",
+      "providers",
+      "routing",
+      "models",
+      "templates",
+      "media",
+      "credits",
+      "plans",
+      "payments",
+      "api",
+      "whitelabel",
+      "pages",
+      "settings",
+      "logs"
+    ],
+    "default": "overview",
+    "tsType": "string"
+  }
+}

@@ -1,0 +1,773 @@
+<sc-helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Archivo+Black&family=Bebas+Neue&family=DM+Sans:wght@500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="/vendor/lucide/lucide.css">
+<style>
+html,body{margin:0;background:#f5f5f3;-webkit-font-smoothing:antialiased}
+a{color:#17181a;text-decoration:none}a:hover{color:oklch(0.58 0.19 35)}
+*{box-sizing:border-box}
+@keyframes rs-spin{to{transform:rotate(360deg)}}
+@keyframes rs-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes rs-wave{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes rs-shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes rs-scan{0%{transform:translateY(-100%)}100%{transform:translateY(400%)}}
+</style>
+</sc-helmet>
+<div style="display:flex;min-height:100vh;font-family:'Geist',system-ui,sans-serif;color:#17181a;background:#f5f5f3;font-size:14px">
+
+<sc-if value="{{ drawerOverlay }}" hint-placeholder-val="{{ false }}">
+<div sc-camel-on-click="{{ closeDrawer }}" style="position:fixed;inset:0;background:rgba(10,10,12,.45);z-index:39"></div>
+</sc-if>
+
+<aside style="width:248px;flex:none;background:{{ sb.bg }};color:{{ sb.fg }};display:flex;flex-direction:column;gap:18px;position:{{ sb.pos }};top:0;left:0;height:100vh;z-index:40;transform:{{ sb.tf }};transition:transform .25s ease;padding:16px 12px;border-right:1px solid {{ sb.line }};overflow-y:auto">
+  <div style="display:flex;align-items:center;gap:10px;padding:4px 8px">
+    <div style="width:30px;height:30px;border-radius:8px;background:oklch(0.58 0.19 35);display:grid;place-items:center;color:#fff"><i class="icon-play" style="font-size:15px"></i></div>
+    <div style="display:flex;flex-direction:column;line-height:1.1">
+      <span style="font-weight:600;font-size:15px;color:{{ sb.strong }};letter-spacing:-0.01em">{{ appName }}</span>
+      <span style="font-family:'Geist Mono',monospace;font-size:10.5px;opacity:.6">Studio · v2.4</span>
+    </div>
+    <sc-if value="{{ isMobile }}"><button sc-camel-on-click="{{ closeDrawer }}" style="margin-left:auto;background:none;border:0;color:inherit;cursor:pointer;font-size:18px"><i class="icon-x"></i></button></sc-if>
+  </div>
+  <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="3">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.5;padding:0 10px 6px">{{ g.title }}</div>
+      <sc-for list="{{ g.items }}" as="n" hint-placeholder-count="4">
+        <button sc-camel-on-click="{{ n.go }}" style="display:flex;align-items:center;gap:10px;width:100%;height:36px;padding:0 10px;border:0;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};font:inherit;font-size:13.5px;cursor:pointer;text-align:left">
+          <i class="{{ n.icon }}" style="font-size:16px;width:18px;text-align:center"></i>
+          <span style="flex:1">{{ n.label }}</span>
+          <sc-if value="{{ n.hasBadge }}"><span style="font-family:'Geist Mono',monospace;font-size:10.5px;padding:2px 6px;border-radius:6px;background:{{ sb.badge }}">{{ n.badge }}</span></sc-if>
+        </button>
+      </sc-for>
+    </div>
+  </sc-for>
+  <div style="margin-top:auto;display:flex;flex-direction:column;gap:12px">
+    <div style="border:1px solid {{ sb.line }};border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px"><span>Credits</span><span style="font-family:'Geist Mono',monospace;color:{{ sb.strong }}">{{ me.creditsLabel }}</span></div>
+      <div style="height:5px;border-radius:9px;background:{{ sb.line }}"><div style="width:{{ me.creditsPct }};height:100%;border-radius:9px;background:oklch(0.58 0.19 35)"></div></div>
+      <div style="font-size:12px;opacity:.7">{{ me.planLabel }}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:4px 6px">
+      <div style="width:32px;height:32px;border-radius:50%;background:#3a3c42;color:#fff;display:grid;place-items:center;font-size:12px;font-weight:600">{{ me.initials }}</div>
+      <div style="display:flex;flex-direction:column;line-height:1.25;min-width:0">
+        <span style="font-size:13px;font-weight:500;color:{{ sb.strong }}">{{ me.name }}</span>
+        <span style="font-size:11.5px;opacity:.6">{{ me.email }}</span>
+      </div>
+      <button sc-camel-on-click="{{ logout }}" title="Log out" style="margin-left:auto;background:none;border:0;color:inherit;cursor:pointer;opacity:.6;font-size:15px"><i class="icon-log-out"></i></button>
+    </div>
+  </div>
+</aside>
+
+<main style="flex:1;min-width:0;display:flex;flex-direction:column">
+  <header style="position:sticky;top:0;z-index:30;height:60px;display:flex;align-items:center;gap:12px;padding:0 {{ hdrPad }};background:rgba(245,245,243,.88);backdrop-filter:blur(10px);border-bottom:1px solid #e8e7e3">
+    <sc-if value="{{ isMobile }}"><button sc-camel-on-click="{{ openDrawer }}" style="width:36px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer;display:grid;place-items:center"><i class="icon-menu" style="font-size:17px"></i></button></sc-if>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#6b6d72;min-width:0">
+      <span>{{ appName }}</span><i class="icon-chevron-right" style="font-size:13px"></i><span style="color:#17181a;font-weight:500;white-space:nowrap">{{ pageTitle }}</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <sc-if value="{{ notMobile }}">
+        <div style="display:flex;align-items:center;gap:8px;height:36px;width:260px;padding:0 12px;border:1px solid #e1e0dc;border-radius:9px;background:#fff;color:#8a8c91"><i class="icon-search" style="font-size:15px"></i><span style="font-size:13px;flex:1">Search projects, videos…</span><span style="font-family:'Geist Mono',monospace;font-size:11px;border:1px solid #e1e0dc;border-radius:5px;padding:1px 5px">⌘K</span></div>
+      </sc-if>
+      <div style="display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:9px;background:#fff;border:1px solid #e1e0dc;font-size:13px"><i class="icon-coins" style="font-size:15px;color:oklch(0.58 0.19 35)"></i><span style="font-family:'Geist Mono',monospace">{{ me.credits }}</span></div>
+      <button style="position:relative;width:36px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer;display:grid;place-items:center"><i class="icon-bell" style="font-size:16px"></i><span style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:oklch(0.58 0.19 35);border:2px solid #fff"></span></button>
+    </div>
+  </header>
+
+  <div style="flex:1;width:100%;max-width:{{ maxW }};margin:0 auto;padding:{{ pad }}">
+
+<!-- DASHBOARD -->
+<sc-if value="{{ s.dashboard }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+    <div>
+      <h1 style="margin:0;font-size:30px;font-weight:600;letter-spacing:-0.025em">{{ greeting }} 👋</h1>
+      <p style="margin:6px 0 0;color:#6b6d72;font-size:15px">Turn your ideas into professional videos.</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button sc-camel-on-click="{{ go.templates }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;color:#17181a;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-layout-template" style="font-size:16px"></i>Browse templates</button>
+      <button sc-camel-on-click="{{ go.create }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 4px 14px oklch(0.58 0.19 35 / .28)"><i class="icon-plus" style="font-size:16px"></i>Create Video</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px">
+    <sc-for list="{{ stats }}" as="st" hint-placeholder-count="5">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(20,20,25,.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center;color:#6b6d72;font-size:13px"><span>{{ st.label }}</span><i class="{{ st.icon }}" style="font-size:16px"></i></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:28px;font-weight:600;letter-spacing:-0.025em;font-variant-numeric:tabular-nums">
+          <sc-if value="{{ st.live }}"><span style="width:8px;height:8px;border-radius:50%;background:oklch(0.6 0.15 250);animation:rs-pulse 1.4s ease-in-out infinite"></span></sc-if>
+          {{ st.value }}<span style="font-size:14px;font-weight:500;color:#8a8c91">{{ st.unit }}</span>
+        </div>
+        <sc-if value="{{ st.bar }}"><div style="height:5px;border-radius:9px;background:#efeeea"><div style="width:{{ st.pct }};height:100%;border-radius:9px;background:{{ st.barColor }}"></div></div></sc-if>
+        <div style="font-size:12.5px;color:{{ st.subColor }}">{{ st.sub }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <h2 style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.01em">Quick create</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px">
+      <sc-for list="{{ quick }}" as="q" hint-placeholder-count="4">
+        <button sc-camel-on-click="{{ q.go }}" style="text-align:left;font:inherit;color:inherit;cursor:pointer;background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(20,20,25,.04)" style-hover="border-color:#cfcdc7;box-shadow:0 6px 20px rgba(20,20,25,.07)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="width:40px;height:40px;border-radius:11px;background:#f3f2ef;display:grid;place-items:center"><i class="{{ q.icon }}" style="font-size:19px"></i></div>
+            <i class="icon-arrow-up-right" style="color:#a0a2a7;font-size:17px"></i>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px"><span style="font-weight:600;font-size:15px">{{ q.title }}</span><span style="color:#6b6d72;font-size:13px;line-height:1.45;text-wrap:pretty">{{ q.desc }}</span></div>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:{{ dashCols }};gap:18px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0;font-size:17px;font-weight:600">Recent projects</h2><button sc-camel-on-click="{{ go.library }}" style="background:none;border:0;font:inherit;font-size:13px;color:#6b6d72;cursor:pointer;display:flex;align-items:center;gap:4px">View all<i class="icon-arrow-right" style="font-size:14px"></i></button></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px">
+        <sc-for list="{{ recent }}" as="p" hint-placeholder-count="6">
+          <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(20,20,25,.04);display:flex;flex-direction:column">
+            <div sc-camel-on-click="{{ p.open }}" style="position:relative;aspect-ratio:16/10;background:{{ p.c }};cursor:pointer;overflow:hidden">
+              <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div>
+              <span style="position:absolute;left:12px;top:10px;font-family:'Geist Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.7)">thumbnail · {{ p.ratio }}</span>
+              <span style="position:absolute;right:10px;bottom:10px;font-family:'Geist Mono',monospace;font-size:11px;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:6px">{{ p.dur }}</span>
+              <sc-if value="{{ p.processing }}"><div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.2)"><div style="width:64%;height:100%;background:#fff"></div></div></sc-if>
+            </div>
+            <div style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:flex-start;gap:8px"><span style="font-weight:500;font-size:14px;flex:1;line-height:1.3">{{ p.name }}</span><button style="background:none;border:0;cursor:pointer;color:#8a8c91;padding:2px"><i class="icon-ellipsis" style="font-size:16px"></i></button></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:{{ p.sbg }};color:{{ p.sfg }}"><span style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>{{ p.status }}</span>
+                <span style="font-size:12px;color:#8a8c91">{{ p.date }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(20,20,25,.04)">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600;font-size:15px">Your AI stack</span><button sc-camel-on-click="{{ go.providers }}" style="background:none;border:0;font:inherit;font-size:13px;color:#6b6d72;cursor:pointer">Manage</button></div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ stack }}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #f0efec">
+            <div style="width:32px;height:32px;border-radius:9px;background:#f3f2ef;display:grid;place-items:center"><i class="{{ k.icon }}" style="font-size:15px"></i></div>
+            <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.3"><span style="font-size:12px;color:#8a8c91">{{ k.cat }}</span><span style="font-size:13.5px;font-weight:500">{{ k.name }}</span></div>
+            <span style="width:8px;height:8px;border-radius:50%;background:{{ k.dot }}"></span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="border-radius:11px;background:#f6f5f2;padding:14px;display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;color:#6b6d72">Estimated AI cost this month</span>
+        <span style="font-size:22px;font-weight:600;font-family:'Geist Mono',monospace;letter-spacing:-0.02em">{{ aiCost }}</span>
+        <span style="font-size:12px;color:#6b6d72;line-height:1.45">Billed by your providers directly. No platform fee.</span>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- CREATE WIZARD -->
+<sc-if value="{{ s.create }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.02em">{{ idea.topic }}</h1><p style="margin:4px 0 0;font-size:13px;color:#8a8c91;display:flex;align-items:center;gap:6px"><i class="icon-cloud-check" style="font-size:14px"></i>Draft saved · just now</p></div>
+    <button sc-camel-on-click="{{ go.dashboard }}" style="height:36px;padding:0 14px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">Save &amp; exit</button>
+  </div>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:8px;display:flex;gap:4px;overflow-x:auto">
+    <sc-for list="{{ steps }}" as="sp" hint-placeholder-count="7">
+      <button sc-camel-on-click="{{ sp.go }}" style="flex:1 0 auto;display:flex;align-items:center;gap:9px;height:44px;padding:0 12px;border:0;border-radius:10px;background:{{ sp.bg }};font:inherit;font-size:13.5px;color:{{ sp.fg }};cursor:pointer;white-space:nowrap">
+        <span style="width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:600;background:{{ sp.dotBg }};color:{{ sp.dotFg }};font-family:'Geist Mono',monospace"><sc-if value="{{ sp.done }}"><i class="icon-check" style="font-size:13px"></i></sc-if><sc-if value="{{ sp.notDone }}">{{ sp.n }}</sc-if></span>
+        <span style="font-weight:{{ sp.fw }}">{{ sp.label }}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <!-- STEP 1 IDEA -->
+  <sc-if value="{{ st.idea }}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid;grid-template-columns:{{ sideCols }};gap:18px;align-items:start">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:22px">
+      <div><h2 style="margin:0;font-size:18px;font-weight:600">Video idea</h2><p style="margin:4px 0 0;color:#6b6d72;font-size:13.5px">Describe what you want. The AI writes the script and plans the scenes.</p></div>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Video topic</span><input value="{{ idea.topic }}" sc-camel-on-change="{{ setTopic }}" style="height:44px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14.5px;background:#fff;color:#17181a;outline:none;width:100%" style-focus="border-color:#17181a;box-shadow:0 0 0 3px rgba(23,24,26,.08)"></label>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Description</span><textarea name="idea_description" rows="3" sc-camel-default-value="Short product ad for Hydra, a smart water bottle that glows when it's time to drink, syncs with your phone and keeps water cold for 24 hours." style="padding:11px 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;line-height:1.5;resize:vertical;outline:none;width:100%" style-focus="border-color:#17181a;box-shadow:0 0 0 3px rgba(23,24,26,.08)"></textarea></label>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+        <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Target audience</span><input name="idea_audience" sc-camel-default-value="Busy professionals, 25–40" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%" style-focus="border-color:#17181a;box-shadow:0 0 0 3px rgba(23,24,26,.08)"></label>
+        <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Language</span><sc-raw-select style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;background:#fff;outline:none;width:100%"><option>English (US)</option><option>English (UK)</option><option>Spanish</option><option>German</option><option>French</option><option>Portuguese (BR)</option><option>Hindi</option></sc-raw-select></label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Tone</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ toneChips }}" as="c" hint-placeholder-count="5"><button sc-camel-on-click="{{ c.on }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Platform</span>
+        <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ platChips }}" as="c" hint-placeholder-count="5"><button sc-camel-on-click="{{ c.on }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px">
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Duration</span>
+          <div style="display:flex;padding:3px;border-radius:10px;background:#f1f0ed;gap:2px"><sc-for list="{{ durChips }}" as="c" hint-placeholder-count="4"><button sc-camel-on-click="{{ c.on }}" style="flex:1;height:34px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;font-weight:500;color:#17181a;cursor:pointer;font-family:'Geist Mono',monospace">{{ c.label }}</button></sc-for></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Aspect ratio</span>
+          <div style="display:flex;gap:8px"><sc-for list="{{ ratioChips }}" as="c" hint-placeholder-count="4"><button sc-camel-on-click="{{ c.on }}" style="flex:1;height:64px;border:1px solid {{ c.bd }};border-radius:10px;background:{{ c.tileBg }};font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span style="width:{{ c.w }};height:{{ c.h }};border:1.5px solid #17181a;border-radius:3px"></span><span style="font-family:'Geist Mono',monospace;font-size:11px">{{ c.label }}</span></button></sc-for></div>
+        </div>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Primary call to action</span><input name="idea_cta" sc-camel-default-value="Shop now at hydra.co" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%" style-focus="border-color:#17181a;box-shadow:0 0 0 3px rgba(23,24,26,.08)"></label>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-weight:600;font-size:15px">Generation plan</span>
+        <sc-for list="{{ plan }}" as="pl" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:30px;height:30px;border-radius:8px;background:#f3f2ef;display:grid;place-items:center"><i class="{{ pl.icon }}" style="font-size:14px"></i></div><div style="display:flex;flex-direction:column;line-height:1.3;min-width:0"><span style="font-size:13px;font-weight:500">{{ pl.step }}</span><span style="font-size:12px;color:#6b6d72;font-family:'Geist Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pl.via }}</span></div></div>
+        </sc-for>
+        <div style="height:1px;background:#f0efec"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="border-radius:10px;background:#f6f5f2;padding:12px"><div style="font-size:11.5px;color:#6b6d72">Est. credits</div><div style="font-size:20px;font-weight:600;font-family:'Geist Mono',monospace">38</div></div>
+          <div style="border-radius:10px;background:#f6f5f2;padding:12px"><div style="font-size:11.5px;color:#6b6d72">Est. time</div><div style="font-size:20px;font-weight:600;font-family:'Geist Mono',monospace">~2 min</div></div>
+        </div>
+        <div style="font-size:12.5px;color:#6b6d72;font-family:'Geist Mono',monospace">{{ outputLine }}</div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- STEP 2 SCRIPT -->
+  <sc-if value="{{ st.script }}" hint-placeholder-val="{{ false }}">
+  <div style="display:grid;grid-template-columns:{{ sideCols }};gap:18px;align-items:start">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid #f0efec">
+        <span style="font-weight:600;font-size:15px;margin-right:auto">Script</span>
+        <button sc-camel-on-click="{{ regenScript }}" style="display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer"><i class="icon-refresh-cw" style="font-size:14px"></i>Regenerate</button>
+        <button sc-camel-on-click="{{ toggleEditScript }}" style="display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:9px;border:1px solid {{ editBtn.bd }};background:{{ editBtn.bg }};color:{{ editBtn.fg }};font:inherit;font-size:13px;cursor:pointer"><i class="icon-pencil" style="font-size:14px"></i>{{ editBtn.label }}</button>
+      </div>
+      <sc-if value="{{ regen }}">
+        <div style="padding:24px 22px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b6d72"><i class="icon-loader-circle" style="animation:rs-spin 1s linear infinite;display:inline-block"></i>Rewriting with OpenRouter…</div>
+          <div style="height:22px;width:60%;border-radius:6px;background:linear-gradient(90deg,#f0efec 0,#e6e5e1 50%,#f0efec 100%);background-size:800px 100%;animation:rs-shimmer 1.2s linear infinite"></div>
+          <div style="height:14px;width:92%;border-radius:6px;background:linear-gradient(90deg,#f0efec 0,#e6e5e1 50%,#f0efec 100%);background-size:800px 100%;animation:rs-shimmer 1.2s linear infinite"></div>
+          <div style="height:14px;width:84%;border-radius:6px;background:linear-gradient(90deg,#f0efec 0,#e6e5e1 50%,#f0efec 100%);background-size:800px 100%;animation:rs-shimmer 1.2s linear infinite"></div>
+          <div style="height:14px;width:70%;border-radius:6px;background:linear-gradient(90deg,#f0efec 0,#e6e5e1 50%,#f0efec 100%);background-size:800px 100%;animation:rs-shimmer 1.2s linear infinite"></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ notRegen }}">
+        <div style="padding:22px;display:flex;flex-direction:column;gap:20px">
+          <sc-if value="{{ viewScript }}"><h3 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.02em">{{ script.title }}</h3></sc-if>
+          <sc-if value="{{ editScript }}"><input value="{{ script.title }}" sc-camel-on-change="{{ scriptSet.title }}" style="height:46px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:19px;font-weight:600;outline:none;width:100%"></sc-if>
+          <sc-for list="{{ scriptParts }}" as="sp2" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:4px 1fr;gap:14px">
+              <div style="border-radius:4px;background:{{ sp2.color }}"></div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;gap:10px;align-items:center"><span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">{{ sp2.label }}</span><span style="font-family:'Geist Mono',monospace;font-size:11px;color:#8a8c91">{{ sp2.time }}</span></div>
+                <sc-if value="{{ viewScript }}"><p style="margin:0;font-size:15.5px;line-height:1.65;color:#2a2b2e;text-wrap:pretty">{{ sp2.text }}</p></sc-if>
+                <sc-if value="{{ editScript }}"><textarea rows="3" value="{{ sp2.text }}" sc-camel-on-change="{{ sp2.set }}" style="padding:10px 12px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:15px;line-height:1.6;resize:vertical;outline:none;width:100%"></textarea></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px">
+      <span style="font-weight:600;font-size:15px">Script details</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="border-radius:10px;background:#f6f5f2;padding:12px"><div style="font-size:11.5px;color:#6b6d72">Est. duration</div><div style="font-size:20px;font-weight:600;font-family:'Geist Mono',monospace">{{ scriptDur }}</div></div>
+        <div style="border-radius:10px;background:#f6f5f2;padding:12px"><div style="font-size:11.5px;color:#6b6d72">Word count</div><div style="font-size:20px;font-weight:600;font-family:'Geist Mono',monospace">{{ wordCount }}</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+        <div style="display:flex;justify-content:space-between"><span style="color:#6b6d72">Speaking pace</span><span>150 wpm</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6b6d72">Tone</span><span>{{ idea.tone }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#6b6d72">Target length</span><span>{{ idea.dur }}</span></div>
+      </div>
+      <div style="height:1px;background:#f0efec"></div>
+      <div style="font-size:12px;color:#6b6d72;line-height:1.5">Generated with <span style="font-family:'Geist Mono',monospace;color:#17181a">{{ genVia }}</span></div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- STEP 3 SCENES -->
+  <sc-if value="{{ st.scenes }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">Timeline</span><span style="font-family:'Geist Mono',monospace;color:#6b6d72">{{ sceneCount }} scenes · {{ totalLabel }}</span></div>
+      <div style="display:flex;gap:3px;height:34px">
+        <sc-for list="{{ sceneRows }}" as="sc" hint-placeholder-count="5"><div style="flex:{{ sc.dur }};border-radius:7px;background:{{ sc.c }};color:#fff;font-family:'Geist Mono',monospace;font-size:11px;display:flex;align-items:center;padding:0 8px;overflow:hidden;white-space:nowrap">{{ sc.num }} · {{ sc.durLabel }}</div></sc-for>
+      </div>
+    </div>
+    <sc-for list="{{ sceneRows }}" as="sc" hint-placeholder-count="5">
+      <div draggable="true" sc-camel-on-drag-start="{{ sc.onDragStart }}" sc-camel-on-drag-over="{{ sc.onDragOver }}" sc-camel-on-drop="{{ sc.onDrop }}" sc-camel-on-drag-end="{{ sc.onDragEnd }}" style="background:#fff;border:1px solid {{ sc.bd }};border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;gap:16px;align-items:stretch;opacity:{{ sc.op }};transition:border-color .15s">
+        <div style="display:flex;align-items:center;gap:10px">
+          <i class="icon-grip-vertical" style="color:#a0a2a7;cursor:grab;font-size:17px"></i>
+          <div style="position:relative;width:150px;aspect-ratio:16/10;border-radius:10px;background:{{ sc.c }};overflow:hidden;flex:none">
+            <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div>
+            <span style="position:absolute;left:8px;top:7px;font-family:'Geist Mono',monospace;font-size:10.5px;color:#fff;background:rgba(0,0,0,.4);padding:1px 6px;border-radius:5px">{{ sc.num }}</span>
+            <sc-if value="{{ sc.rg }}"><div style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;color:#fff"><i class="icon-loader-circle" style="animation:rs-spin 1s linear infinite;display:inline-block;font-size:20px"></i></div></sc-if>
+          </div>
+        </div>
+        <div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8a8c91">Visual prompt</span>
+            <sc-if value="{{ sc.view }}"><span style="font-size:13.5px;line-height:1.5;color:#3a3c40">{{ sc.prompt }}</span></sc-if>
+            <sc-if value="{{ sc.editing }}"><input value="{{ sc.prompt }}" sc-camel-on-change="{{ sc.setPrompt }}" style="height:38px;padding:0 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13.5px;outline:none;width:100%"></sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8a8c91">Narration</span>
+            <sc-if value="{{ sc.view }}"><span style="font-size:14.5px;line-height:1.5">“{{ sc.narration }}”</span></sc-if>
+            <sc-if value="{{ sc.editing }}"><textarea rows="2" value="{{ sc.narration }}" sc-camel-on-change="{{ sc.setNarr }}" style="padding:9px 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:14px;outline:none;resize:vertical;width:100%"></textarea></sc-if>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:7px;background:#f3f2ef;font-size:12.5px"><i class="icon-captions" style="font-size:13px"></i>{{ sc.caption }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border-radius:7px;background:#f3f2ef;font-size:12.5px;font-family:'Geist Mono',monospace"><i class="icon-clock" style="font-size:13px"></i>{{ sc.durLabel }}</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:4px">
+          <button title="Regenerate" sc-camel-on-click="{{ sc.onRegen }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e8e7e3;background:#fff;cursor:pointer;display:grid;place-items:center"><i class="icon-refresh-cw" style="font-size:14px"></i></button>
+          <button title="Edit" sc-camel-on-click="{{ sc.onEdit }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e8e7e3;background:{{ sc.editBg }};cursor:pointer;display:grid;place-items:center"><i class="icon-pencil" style="font-size:14px"></i></button>
+          <button title="Duplicate" sc-camel-on-click="{{ sc.onDup }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e8e7e3;background:#fff;cursor:pointer;display:grid;place-items:center"><i class="icon-copy" style="font-size:14px"></i></button>
+          <button title="Delete" sc-camel-on-click="{{ sc.onDel }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e8e7e3;background:#fff;cursor:pointer;display:grid;place-items:center;color:oklch(0.55 0.18 25)"><i class="icon-trash-2" style="font-size:14px"></i></button>
+        </div>
+      </div>
+    </sc-for>
+    <button sc-camel-on-click="{{ addScene }}" style="height:54px;border-radius:14px;border:1.5px dashed #d6d4ce;background:transparent;font:inherit;font-size:14px;font-weight:500;color:#55575c;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px" style-hover="border-color:#17181a;color:#17181a"><i class="icon-plus" style="font-size:16px"></i>Add scene</button>
+  </div>
+  </sc-if>
+
+  <!-- STEP 4 VISUALS -->
+  <sc-if value="{{ st.visuals }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+      <div style="font-size:13.5px;color:#6b6d72"><span style="color:#17181a;font-weight:600">{{ visDone }}</span> of {{ sceneCount }} scenes have visuals</div>
+      <button sc-camel-on-click="{{ genAll }}" style="display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer"><i class="icon-wand-sparkles" style="font-size:15px"></i>Generate all missing</button>
+    </div>
+    <sc-for list="{{ visRows }}" as="v" hint-placeholder-count="5">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;gap:18px">
+        <div style="position:relative;width:200px;aspect-ratio:16/10;border-radius:10px;overflow:hidden;flex:none;background:{{ v.thumbBg }};border:1px dashed {{ v.thumbBd }}">
+          <sc-if value="{{ v.done }}"><div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div><span style="position:absolute;left:8px;bottom:7px;font-family:'Geist Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.8)">{{ v.kind }} · 1080×1920</span></sc-if>
+          <sc-if value="{{ v.empty }}"><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#8a8c91;font-size:12px"><i class="icon-image" style="font-size:20px"></i>No visual yet</div></sc-if>
+          <sc-if value="{{ v.loading }}">
+            <div style="position:absolute;inset:0;background:#1d1f23;overflow:hidden"><div style="position:absolute;left:0;right:0;height:30%;background:linear-gradient(180deg,transparent,rgba(255,255,255,.08),transparent);animation:rs-scan 1.6s linear infinite"></div></div>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff"><span style="font-size:12.5px">Generating visual…</span><span style="font-family:'Geist Mono',monospace;font-size:18px;font-weight:500">{{ v.pctLabel }}</span></div>
+            <div style="position:absolute;left:0;bottom:0;height:3px;width:{{ v.pct }};background:oklch(0.7 0.17 40);transition:width .1s linear"></div>
+          </sc-if>
+        </div>
+        <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:3px"><span style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#8a8c91">SCENE {{ v.num }} · {{ v.durLabel }}</span><span style="font-size:14px;line-height:1.45">{{ v.prompt }}</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:10px;background:#f1f0ed;align-self:flex-start">
+            <sc-for list="{{ v.tabs }}" as="tb" hint-placeholder-count="4"><button sc-camel-on-click="{{ tb.on }}" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:0;border-radius:7px;background:{{ tb.bg }};box-shadow:{{ tb.sh }};font:inherit;font-size:12.5px;font-weight:500;color:#17181a;cursor:pointer"><i class="{{ tb.icon }}" style="font-size:13px"></i>{{ tb.label }}</button></sc-for>
+          </div>
+          <sc-if value="{{ v.isAI }}">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+              <label style="display:flex;flex-direction:column;gap:5px;flex:1 1 160px"><span style="font-size:12px;color:#6b6d72">Provider</span><sc-raw-select style="height:36px;padding:0 10px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;background:#fff"><sc-for list="{{ v.provs }}" as="o"><option>{{ o }}</option></sc-for></sc-raw-select></label>
+              <label style="display:flex;flex-direction:column;gap:5px;flex:1 1 160px"><span style="font-size:12px;color:#6b6d72">Model</span><sc-raw-select style="height:36px;padding:0 10px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;background:#fff;font-family:'Geist Mono',monospace"><sc-for list="{{ v.models }}" as="o"><option>{{ o }}</option></sc-for></sc-raw-select></label>
+              <button sc-camel-on-click="{{ v.onGen }}" style="display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:9px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer"><i class="icon-sparkles" style="font-size:14px"></i>{{ v.genLabel }}</button>
+            </div>
+            <span style="font-size:12px;color:#8a8c91">{{ v.cost }}</span>
+          </sc-if>
+          <sc-if value="{{ v.isUpload }}"><div style="height:64px;border:1.5px dashed #d6d4ce;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;color:#55575c;font-size:13px"><i class="icon-upload" style="font-size:16px"></i>Drop an image or MP4 here, or <span style="text-decoration:underline">browse</span></div></sc-if>
+          <sc-if value="{{ v.isLib }}"><div style="display:flex;gap:8px"><sc-for list="{{ libPick }}" as="lp" hint-placeholder-count="5"><div style="width:64px;aspect-ratio:1;border-radius:8px;background:{{ lp }};cursor:pointer"></div></sc-for><div style="width:64px;aspect-ratio:1;border-radius:8px;border:1px solid #e1e0dc;display:grid;place-items:center;font-size:12px;color:#6b6d72">+248</div></div></sc-if>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <!-- STEP 5 VOICE -->
+  <sc-if value="{{ st.voice }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+      <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ voiceCats }}" as="c" hint-placeholder-count="8"><button sc-camel-on-click="{{ c.on }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b6d72">Voice provider<sc-raw-select style="height:34px;padding:0 10px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;background:#fff"><option>Edge TTS (free)</option><option>Piper (self-hosted)</option><option>ElevenLabs</option><option>OpenAI TTS</option></sc-raw-select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px">
+      <sc-for list="{{ voiceList }}" as="vc" hint-placeholder-count="6">
+        <div style="background:#fff;border:1.5px solid {{ vc.bd }};border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;box-shadow:{{ vc.sh }}">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div style="width:42px;height:42px;border-radius:50%;background:{{ vc.c }};color:#fff;display:grid;place-items:center;font-weight:600">{{ vc.init }}</div>
+            <div style="display:flex;flex-direction:column;flex:1;line-height:1.3"><span style="font-weight:600;font-size:15px">{{ vc.name }}</span><span style="font-size:12.5px;color:#6b6d72">{{ vc.lang }} · {{ vc.accent }}</span></div>
+            <sc-if value="{{ vc.sel }}"><span style="width:22px;height:22px;border-radius:50%;background:#17181a;color:#fff;display:grid;place-items:center"><i class="icon-check" style="font-size:12px"></i></span></sc-if>
+          </div>
+          <div style="display:flex;align-items:center;gap:3px;height:28px">
+            <sc-for list="{{ vc.bars }}" as="b"><span style="flex:1;height:{{ b.h }};border-radius:2px;background:{{ b.c }};transform-origin:center;animation:{{ b.anim }}"></span></sc-for>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ vc.tags }}" as="tg"><span style="font-size:11.5px;padding:3px 8px;border-radius:6px;background:#f3f2ef;color:#55575c">{{ tg }}</span></sc-for></div>
+          <div style="display:flex;gap:8px">
+            <button sc-camel-on-click="{{ vc.onPlay }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer"><i class="{{ vc.playIcon }}" style="font-size:14px"></i>{{ vc.playLabel }}</button>
+            <button sc-camel-on-click="{{ vc.onSel }}" style="flex:1;height:36px;border-radius:9px;border:0;background:{{ vc.selBg }};color:{{ vc.selFg }};font:inherit;font-size:13px;font-weight:500;cursor:pointer">{{ vc.selLabel }}</button>
+          </div>
+        </div>
+      </sc-for>
+      <div style="border:1.5px dashed #d6d4ce;border-radius:14px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;min-height:200px">
+        <div style="width:42px;height:42px;border-radius:50%;background:#f3f2ef;display:grid;place-items:center"><i class="icon-mic" style="font-size:18px"></i></div>
+        <span style="font-weight:600">Upload voice</span>
+        <span style="font-size:12.5px;color:#6b6d72;line-height:1.45;max-width:220px">Clone a voice from a 30-second sample. Needs a provider that supports cloning.</span>
+        <span style="font-size:11.5px;font-family:'Geist Mono',monospace;color:#8a8c91">ElevenLabs · not connected</span>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- STEP 6 CAPTIONS -->
+  <sc-if value="{{ st.captions }}" hint-placeholder-val="{{ false }}">
+  <div style="display:grid;grid-template-columns:{{ capCols }};gap:18px;align-items:start">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Font</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px"><sc-for list="{{ capFonts }}" as="c" hint-placeholder-count="4"><button sc-camel-on-click="{{ c.on }}" style="height:54px;border-radius:10px;border:1.5px solid {{ c.bd }};background:#fff;font-family:{{ c.ff }};font-size:17px;cursor:pointer;color:#17181a">{{ c.label }}</button></sc-for></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:500;color:#3a3c40">Size</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">{{ cap.size }}px</span></div><input type="range" min="28" max="72" value="{{ cap.size }}" sc-camel-on-change="{{ setCapSize }}" style="width:100%;accent-color:#17181a"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px">
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Position</span><div style="display:flex;padding:3px;border-radius:10px;background:#f1f0ed;gap:2px"><sc-for list="{{ capPos }}" as="c" hint-placeholder-count="3"><button sc-camel-on-click="{{ c.on }}" style="flex:1;height:32px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Background</span><div style="display:flex;padding:3px;border-radius:10px;background:#f1f0ed;gap:2px"><sc-for list="{{ capBg }}" as="c" hint-placeholder-count="3"><button sc-camel-on-click="{{ c.on }}" style="flex:1;height:32px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Animation</span><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ capAnim }}" as="c" hint-placeholder-count="5"><button sc-camel-on-click="{{ c.on }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px">
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Text color</span><div style="display:flex;gap:8px"><sc-for list="{{ capColors }}" as="c" hint-placeholder-count="5"><button sc-camel-on-click="{{ c.on }}" style="width:32px;height:32px;border-radius:50%;background:{{ c.v }};border:1px solid rgba(0,0,0,.12);box-shadow:{{ c.ring }};cursor:pointer"></button></sc-for></div></div>
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Highlight color</span><div style="display:flex;gap:8px"><sc-for list="{{ capHls }}" as="c" hint-placeholder-count="5"><button sc-camel-on-click="{{ c.on }}" style="width:32px;height:32px;border-radius:50%;background:{{ c.v }};border:1px solid rgba(0,0,0,.12);box-shadow:{{ c.ring }};cursor:pointer"></button></sc-for></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Highlight style</span><div style="display:flex;padding:3px;border-radius:10px;background:#f1f0ed;gap:2px"><sc-for list="{{ capHlStyle }}" as="c" hint-placeholder-count="4"><button sc-camel-on-click="{{ c.on }}" style="flex:1;height:32px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+      <div style="position:relative;width:300px;max-width:100%;aspect-ratio:9/16;border-radius:22px;overflow:hidden;background:#2f4b4b;box-shadow:0 20px 50px rgba(20,20,25,.25);display:flex;flex-direction:column;justify-content:{{ capJustify }};padding:34px 18px">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,transparent 1px 11px)"></div>
+        <span style="position:absolute;left:14px;top:14px;font-family:'Geist Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.7)">scene 01 · footage</span>
+        <div style="position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;text-align:center">
+          <sc-for list="{{ capWords }}" as="wd" hint-placeholder-count="3"><span style="font-family:{{ capFF }};font-size:{{ capPx }};line-height:1.1;text-transform:{{ capTT }};color:{{ wd.color }};background:{{ wd.bg }};padding:{{ wd.pad }};border-radius:6px;border-bottom:{{ wd.ul }};text-shadow:{{ capShadow }};transform:{{ wd.tf }};opacity:{{ wd.op }};transition:all .15s ease;display:inline-block">{{ wd.w }}</span></sc-for>
+        </div>
+        <div style="position:absolute;left:14px;right:14px;bottom:12px;height:3px;border-radius:3px;background:rgba(255,255,255,.25)"><div style="height:100%;width:{{ capProg }};background:#fff;border-radius:3px;transition:width .4s linear"></div></div>
+      </div>
+      <span style="font-size:12px;color:#8a8c91;font-family:'Geist Mono',monospace">Live preview · 9:16</span>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="display:flex;justify-content:space-between;gap:10px;padding-top:4px">
+    <button sc-camel-on-click="{{ prevStep }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer;opacity:{{ backOp }}"><i class="icon-arrow-left" style="font-size:15px"></i>Back</button>
+    <button sc-camel-on-click="{{ nextStep }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 20px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer">{{ nextLabel }}<i class="icon-arrow-right" style="font-size:15px"></i></button>
+  </div>
+</div>
+</sc-if>
+
+<!-- RENDER -->
+<sc-if value="{{ s.render }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+  <sc-if value="{{ renderActive }}">
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:18px;overflow:hidden;box-shadow:0 10px 40px rgba(20,20,25,.06)">
+    <div style="padding:30px 30px 24px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px">
+        <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Rendering Your Video</h1><p style="margin:6px 0 0;color:#6b6d72;font-size:14px">{{ idea.topic }} · {{ idea.ratio }} · {{ totalLabel }}</p></div>
+        <div style="text-align:right"><div style="font-family:'Geist Mono',monospace;font-size:40px;font-weight:500;letter-spacing:-0.04em;line-height:1">{{ renderPct }}</div><div style="font-size:12.5px;color:#6b6d72;margin-top:4px">{{ eta }}</div></div>
+      </div>
+      <div style="height:8px;border-radius:9px;background:#efeeea;overflow:hidden"><div style="height:100%;width:{{ renderW }};background:oklch(0.58 0.19 35);border-radius:9px;transition:width .15s linear"></div></div>
+    </div>
+    <div style="border-top:1px solid #f0efec;display:flex;flex-direction:column">
+      <sc-for list="{{ stages }}" as="sg" hint-placeholder-count="6">
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 30px;border-bottom:1px solid #f5f4f1">
+          <span style="width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:{{ sg.bg }};color:{{ sg.fg }}"><i class="{{ sg.icon }}" style="font-size:14px;display:inline-block;animation:{{ sg.anim }}"></i></span>
+          <span style="flex:1;font-size:14.5px;font-weight:{{ sg.fw }};color:{{ sg.tc }}">{{ sg.label }}</span>
+          <span style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#6b6d72">{{ sg.meta }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="padding:16px 30px;background:#faf9f7;font-size:13px;color:#6b6d72;display:flex;align-items:center;gap:8px"><i class="icon-mail" style="font-size:15px"></i>You can leave this page. We'll email you when the video is ready.</div>
+  </div>
+  </sc-if>
+  <sc-if value="{{ renderDone }}">
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:18px;padding:30px;display:flex;flex-wrap:wrap;gap:30px;align-items:center;box-shadow:0 10px 40px rgba(20,20,25,.06)">
+    <div style="position:relative;width:220px;aspect-ratio:9/16;border-radius:16px;overflow:hidden;background:#2f4b4b;flex:none;margin:0 auto">
+      <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,transparent 1px 11px)"></div>
+      <div style="position:absolute;inset:0;display:grid;place-items:center"><div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center"><i class="icon-play" style="font-size:22px;margin-left:3px"></i></div></div>
+      <span style="position:absolute;right:10px;bottom:10px;font-family:'Geist Mono',monospace;font-size:11px;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:6px">{{ totalLabel }}</span>
+    </div>
+    <div style="flex:1 1 300px;display:flex;flex-direction:column;gap:18px">
+      <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:500;background:oklch(0.95 0.04 150);color:oklch(0.42 0.12 150)"><i class="icon-circle-check" style="font-size:13px"></i>Render complete</span>
+      <h1 style="margin:12px 0 0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Your video is ready 🎉</h1><p style="margin:6px 0 0;color:#6b6d72;font-size:14px;line-height:1.5">{{ idea.topic }}</p></div>
+      <div style="display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:6px 22px;font-size:12.5px"><span style="color:#8a8c91">Resolution</span><span style="color:#8a8c91">Size</span><span style="color:#8a8c91">Credits used</span><span style="font-family:'Geist Mono',monospace">{{ out.res }}</span><span style="font-family:'Geist Mono',monospace">{{ out.size }}</span><span style="font-family:'Geist Mono',monospace">{{ out.credits }}</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <button sc-camel-on-click="{{ download }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer"><i class="icon-download" style="font-size:15px"></i>Download MP4</button>
+        <button sc-camel-on-click="{{ download }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-play" style="font-size:15px"></i>Preview</button>
+        <button style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-share-2" style="font-size:15px"></i>Share</button>
+        <button sc-camel-on-click="{{ go.editor }}" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-pencil" style="font-size:15px"></i>Edit</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- EDITOR -->
+<sc-if value="{{ s.editor }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+    <span style="font-weight:600;font-size:16px;margin-right:auto">{{ idea.topic }}</span>
+    <button style="width:36px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer"><i class="icon-undo-2" style="font-size:15px"></i></button>
+    <button style="width:36px;height:36px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer"><i class="icon-redo-2" style="font-size:15px"></i></button>
+    <button sc-camel-on-click="{{ goRender }}" style="display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer"><i class="icon-download" style="font-size:15px"></i>Export video</button>
+  </div>
+  <div style="display:grid;grid-template-columns:{{ edCols }};gap:12px;align-items:stretch">
+    <div style="order:{{ edOrd.left }};background:#fff;border:1px solid #e8e7e3;border-radius:14px;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+      <div style="display:flex;gap:2px;padding:6px;border-bottom:1px solid #f0efec"><sc-for list="{{ edTabs }}" as="t" hint-placeholder-count="3"><button sc-camel-on-click="{{ t.on }}" style="flex:1;height:30px;border:0;border-radius:7px;background:{{ t.bg }};font:inherit;font-size:12.5px;font-weight:500;cursor:pointer">{{ t.label }}</button></sc-for></div>
+      <sc-if value="{{ edTab.scenes }}"><div style="padding:8px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:520px">
+        <sc-for list="{{ edScenes }}" as="e" hint-placeholder-count="5"><button sc-camel-on-click="{{ e.on }}" style="display:flex;gap:10px;align-items:center;padding:6px;border-radius:10px;border:1.5px solid {{ e.bd }};background:{{ e.bg }};font:inherit;text-align:left;cursor:pointer">
+          <div style="width:44px;aspect-ratio:9/16;border-radius:6px;background:{{ e.c }};flex:none"></div>
+          <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'Geist Mono',monospace;font-size:10.5px;color:#8a8c91">{{ e.num }} · {{ e.durLabel }}</span><span style="font-size:12.5px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">{{ e.caption }}</span></div>
+        </button></sc-for>
+      </div></sc-if>
+      <sc-if value="{{ edTab.media }}"><div style="padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px"><sc-for list="{{ libPick }}" as="lp"><div style="aspect-ratio:1;border-radius:8px;background:{{ lp }}"></div></sc-for><div style="aspect-ratio:1;border-radius:8px;border:1.5px dashed #d6d4ce;display:grid;place-items:center;color:#6b6d72"><i class="icon-upload"></i></div></div></sc-if>
+      <sc-if value="{{ edTab.music }}"><div style="padding:10px;display:flex;flex-direction:column;gap:6px"><sc-for list="{{ tracks }}" as="tr"><div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:9px;border:1px solid {{ tr.bd }};background:{{ tr.bg }}"><i class="icon-music" style="font-size:14px"></i><div style="display:flex;flex-direction:column;flex:1;line-height:1.3"><span style="font-size:12.5px;font-weight:500">{{ tr.name }}</span><span style="font-size:11px;color:#8a8c91">{{ tr.mood }} · {{ tr.len }}</span></div></div></sc-for></div></sc-if>
+    </div>
+    <div style="order:{{ edOrd.center }};background:#141518;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;min-width:0">
+      <div style="position:relative;height:{{ edPrevH }};aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:{{ edCur.c }};transition:background .3s">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,transparent 1px 11px)"></div>
+        <span style="position:absolute;left:10px;top:10px;font-family:'Geist Mono',monospace;font-size:10px;color:rgba(255,255,255,.7)">scene {{ edCur.num }} · {{ edCur.kind }}</span>
+        <div style="position:absolute;left:12px;right:12px;bottom:14%;text-align:center;font-family:'Archivo Black',sans-serif;text-transform:uppercase;font-size:20px;line-height:1.1;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5)">{{ edCur.caption }}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;color:#fff">
+        <button sc-camel-on-click="{{ edPrev }}" style="background:none;border:0;color:#fff;cursor:pointer;font-size:17px"><i class="icon-skip-back"></i></button>
+        <button sc-camel-on-click="{{ edTogglePlay }}" style="width:44px;height:44px;border-radius:50%;border:0;background:#fff;color:#141518;cursor:pointer;display:grid;place-items:center"><i class="{{ edPlayIcon }}" style="font-size:18px"></i></button>
+        <button sc-camel-on-click="{{ edNext }}" style="background:none;border:0;color:#fff;cursor:pointer;font-size:17px"><i class="icon-skip-forward"></i></button>
+        <span style="font-family:'Geist Mono',monospace;font-size:12.5px;color:rgba(255,255,255,.75)">{{ edTime }} / {{ totalLabel }}</span>
+      </div>
+    </div>
+    <div style="order:{{ edOrd.right }};background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600;font-size:14px">Scene {{ edCur.num }}</span><button sc-camel-on-click="{{ edRegen }}" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:8px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12px;cursor:pointer"><i class="icon-refresh-cw" style="font-size:13px"></i>Regenerate</button></div>
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">Caption text</span><input value="{{ edCur.caption }}" sc-camel-on-change="{{ edSetCaption }}" style="height:38px;padding:0 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">Narration</span><textarea rows="3" value="{{ edCur.narration }}" sc-camel-on-change="{{ edSetNarr }}" style="padding:9px 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;line-height:1.5;outline:none;resize:vertical;width:100%"></textarea></label>
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">Media</span>
+        <div style="display:flex;gap:10px;align-items:center;padding:8px;border:1px solid #e8e7e3;border-radius:10px"><div style="width:40px;aspect-ratio:9/16;border-radius:5px;background:{{ edCur.c }}"></div><div style="display:flex;flex-direction:column;flex:1;line-height:1.3"><span style="font-size:12.5px;font-weight:500">{{ edCur.kind }}</span><span style="font-size:11px;color:#8a8c91;font-family:'Geist Mono',monospace">flux-1-schnell</span></div><button style="height:28px;padding:0 10px;border-radius:7px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12px;cursor:pointer">Replace</button></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:500;color:#55575c">Duration</span>
+        <div style="display:flex;align-items:center;border:1px solid #e1e0dc;border-radius:9px;overflow:hidden"><button sc-camel-on-click="{{ edDurDown }}" style="width:32px;height:32px;border:0;background:#fff;cursor:pointer"><i class="icon-minus" style="font-size:13px"></i></button><span style="width:44px;text-align:center;font-family:'Geist Mono',monospace;font-size:13px">{{ edCur.durLabel }}</span><button sc-camel-on-click="{{ edDurUp }}" style="width:32px;height:32px;border:0;background:#fff;cursor:pointer"><i class="icon-plus" style="font-size:13px"></i></button></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">Transition in</span><div style="display:flex;padding:3px;border-radius:9px;background:#f1f0ed;gap:2px"><sc-for list="{{ edTrans }}" as="c" hint-placeholder-count="4"><button sc-camel-on-click="{{ c.on }}" style="flex:1;height:28px;border:0;border-radius:7px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:12px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+      <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#55575c">End card CTA</span><input sc-camel-default-value="Shop now at hydra.co" style="height:38px;padding:0 11px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+    </div>
+  </div>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;overflow-x:auto">
+    <div style="min-width:560px;display:grid;grid-template-columns:78px 1fr;gap:6px 10px;align-items:center">
+      <span></span>
+      <div style="position:relative;height:16px"><sc-for list="{{ ruler }}" as="r"><span style="position:absolute;left:{{ r.left }};font-family:'Geist Mono',monospace;font-size:10px;color:#8a8c91;transform:translateX(-50%)">{{ r.label }}</span></sc-for></div>
+      <span style="font-size:11.5px;color:#6b6d72;display:flex;align-items:center;gap:6px"><i class="icon-film" style="font-size:13px"></i>Video</span>
+      <div style="position:relative;display:flex;gap:3px;height:44px">
+        <sc-for list="{{ edScenes }}" as="e"><button sc-camel-on-click="{{ e.on }}" style="flex:{{ e.dur }};border-radius:7px;border:2px solid {{ e.tlBd }};background:{{ e.c }};color:#fff;font-family:'Geist Mono',monospace;font-size:10.5px;text-align:left;padding:0 7px;cursor:pointer;overflow:hidden;white-space:nowrap">{{ e.num }}</button></sc-for>
+        <div style="position:absolute;top:-22px;bottom:-110px;left:{{ edHead }};width:2px;background:oklch(0.58 0.19 35);pointer-events:none;z-index:2"><div style="position:absolute;top:0;left:-5px;width:12px;height:12px;border-radius:3px;background:oklch(0.58 0.19 35)"></div></div>
+      </div>
+      <span style="font-size:11.5px;color:#6b6d72;display:flex;align-items:center;gap:6px"><i class="icon-mic" style="font-size:13px"></i>Voice</span>
+      <div style="display:flex;gap:3px;height:26px"><sc-for list="{{ edScenes }}" as="e"><div style="flex:{{ e.dur }};border-radius:6px;background:oklch(0.93 0.04 45);background-image:repeating-linear-gradient(90deg,oklch(0.75 0.1 40) 0 2px,transparent 2px 5px);background-size:100% 50%;background-repeat:repeat-x;background-position:center"></div></sc-for></div>
+      <span style="font-size:11.5px;color:#6b6d72;display:flex;align-items:center;gap:6px"><i class="icon-captions" style="font-size:13px"></i>Captions</span>
+      <div style="display:flex;gap:3px;height:24px"><sc-for list="{{ edScenes }}" as="e"><div style="flex:{{ e.dur }};border-radius:6px;background:#f1f0ed;font-size:10.5px;padding:0 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;color:#55575c">{{ e.caption }}</div></sc-for></div>
+      <span style="font-size:11.5px;color:#6b6d72;display:flex;align-items:center;gap:6px"><i class="icon-music" style="font-size:13px"></i>Music</span>
+      <div style="height:24px;border-radius:6px;background:oklch(0.94 0.03 250);color:oklch(0.42 0.1 250);font-size:10.5px;display:flex;align-items:center;padding:0 8px">{{ trackName }}</div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- LIBRARY -->
+<sc-if value="{{ s.library }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">{{ libTitle }}</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Every video you've created, in one place.</p></div>
+    <button sc-camel-on-click="{{ go.create }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer"><i class="icon-plus" style="font-size:15px"></i>Create Video</button>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <div style="display:flex;padding:3px;border-radius:10px;background:#ebeae6;gap:2px;overflow-x:auto;max-width:100%"><sc-for list="{{ libTabs }}" as="c" hint-placeholder-count="5"><button sc-camel-on-click="{{ c.on }}" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap">{{ c.label }}<span style="font-family:'Geist Mono',monospace;font-size:11px;color:#8a8c91">{{ c.count }}</span></button></sc-for></div>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border:1px solid #e1e0dc;border-radius:10px;background:#fff;width:240px;max-width:100%"><i class="icon-search" style="font-size:15px;color:#8a8c91"></i><input placeholder="Search videos" value="{{ q }}" sc-camel-on-change="{{ setQ }}" style="border:0;outline:none;font:inherit;font-size:13.5px;flex:1;min-width:0;background:transparent"></div>
+      <sc-raw-select value="{{ sort }}" sc-camel-on-change="{{ setSort }}" style="height:38px;padding:0 10px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13.5px;background:#fff"><option>Newest</option><option>Oldest</option><option>Name</option><option>Duration</option></sc-raw-select>
+    </div>
+  </div>
+  <sc-if value="{{ libEmpty }}">
+    <div style="border:1.5px dashed #d6d4ce;border-radius:16px;padding:56px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+      <div style="width:48px;height:48px;border-radius:14px;background:#fff;border:1px solid #e8e7e3;display:grid;place-items:center"><i class="icon-film" style="font-size:20px"></i></div>
+      <span style="font-weight:600;font-size:16px">No videos match</span><span style="color:#6b6d72;font-size:13.5px">Try a different filter or search term.</span>
+      <button sc-camel-on-click="{{ clearLib }}" style="margin-top:6px;height:36px;padding:0 14px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">Clear filters</button>
+    </div>
+  </sc-if>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">
+    <sc-for list="{{ libItems }}" as="p" hint-placeholder-count="8">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(20,20,25,.04);display:flex;flex-direction:column">
+        <div sc-camel-on-click="{{ p.open }}" style="position:relative;aspect-ratio:16/10;background:{{ p.c }};cursor:pointer;overflow:hidden">
+          <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div>
+          <span style="position:absolute;left:12px;top:10px;font-family:'Geist Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.7)">thumbnail · {{ p.ratio }}</span>
+          <span style="position:absolute;right:10px;bottom:10px;font-family:'Geist Mono',monospace;font-size:11px;color:#fff;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:6px">{{ p.dur }}</span>
+          <sc-if value="{{ p.processing }}"><div style="position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;gap:8px;color:#fff;font-size:12.5px"><i class="icon-loader-circle" style="animation:rs-spin 1s linear infinite;display:inline-block"></i>Rendering 64%</div></sc-if>
+          <sc-if value="{{ p.failed }}"><div style="position:absolute;inset:0;background:rgba(40,10,10,.45);display:flex;align-items:center;justify-content:center;gap:8px;color:#fff;font-size:12.5px"><i class="icon-circle-alert"></i>Voice provider timed out</div></sc-if>
+        </div>
+        <div style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px">
+          <span style="font-weight:500;font-size:14px;line-height:1.3">{{ p.name }}</span>
+          <div style="font-size:12px;color:#8a8c91">{{ p.platform }} · {{ p.date }}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:{{ p.sbg }};color:{{ p.sfg }}"><span style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>{{ p.status }}</span>
+            <div style="display:flex;gap:2px">
+              <sc-if value="{{ p.failed }}"><button title="Retry" style="width:30px;height:30px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:#55575c"><i class="icon-rotate-ccw" style="font-size:14px"></i></button></sc-if>
+              <sc-if value="{{ p.completed }}"><button sc-camel-on-click="{{ p.download }}" title="Download" style="width:30px;height:30px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:#55575c"><i class="icon-download" style="font-size:14px"></i></button></sc-if>
+              <button sc-camel-on-click="{{ p.open }}" title="Edit" style="width:30px;height:30px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:#55575c"><i class="icon-pencil" style="font-size:14px"></i></button>
+              <button title="More" style="width:30px;height:30px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:#55575c"><i class="icon-ellipsis" style="font-size:14px"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- TEMPLATES -->
+<sc-if value="{{ s.templates }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Templates</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Proven structures for every platform. Pick one and swap in your content.</p></div>
+    <button style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer"><i class="icon-plus" style="font-size:15px"></i>Create Template<span style="font-size:10.5px;font-family:'Geist Mono',monospace;padding:2px 6px;border-radius:5px;background:#17181a;color:#fff">ADMIN</span></button>
+  </div>
+  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px"><sc-for list="{{ tplCats }}" as="c" hint-placeholder-count="10"><button sc-camel-on-click="{{ c.on }}" style="flex:none;height:34px;padding:0 14px;border-radius:999px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:inherit;font-size:13px;cursor:pointer;white-space:nowrap">{{ c.label }}</button></sc-for></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+    <sc-for list="{{ tplItems }}" as="t" hint-placeholder-count="8">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden;display:flex;flex-direction:column" style-hover="box-shadow:0 8px 24px rgba(20,20,25,.08)">
+        <div style="height:210px;background:#f3f2ef;display:grid;place-items:center">
+          <div style="position:relative;width:{{ t.fw }};height:{{ t.fh }};border-radius:10px;background:{{ t.c }};overflow:hidden;box-shadow:0 8px 20px rgba(20,20,25,.18)">
+            <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 10px)"></div>
+            <span style="position:absolute;left:8px;top:7px;font-family:'Geist Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.7)">preview</span>
+            <div style="position:absolute;left:8px;right:8px;bottom:12px;height:8px;border-radius:3px;background:rgba(255,255,255,.85)"></div>
+            <div style="position:absolute;left:20px;right:20px;bottom:24px;height:6px;border-radius:3px;background:rgba(255,255,255,.5)"></div>
+          </div>
+        </div>
+        <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:3px"><span style="font-weight:600;font-size:14.5px">{{ t.name }}</span><span style="font-size:12.5px;color:#6b6d72">{{ t.cat }}</span></div>
+          <div style="display:flex;gap:6px"><span style="font-family:'Geist Mono',monospace;font-size:11px;padding:3px 7px;border-radius:6px;background:#f3f2ef">{{ t.dur }}</span><span style="font-family:'Geist Mono',monospace;font-size:11px;padding:3px 7px;border-radius:6px;background:#f3f2ef">{{ t.ratio }}</span></div>
+          <button sc-camel-on-click="{{ t.use }}" style="height:36px;border-radius:9px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13px;font-weight:500;cursor:pointer">Use Template</button>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- BRAND KIT -->
+<sc-if value="{{ s.brand }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Brand Kit</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Applied automatically to every new video.</p></div>
+    <button style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-check" style="font-size:15px"></i>Save brand kit</button>
+  </div>
+  <div style="display:grid;grid-template-columns:{{ capCols }};gap:18px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:18px">
+        <span style="font-weight:600;font-size:15px">Identity</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Brand name</span><input value="{{ brand.name }}" sc-camel-on-change="{{ bset.name }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Website</span><input value="{{ brand.web }}" sc-camel-on-change="{{ bset.web }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Logo</span>
+          <div style="display:flex;gap:14px;align-items:center;padding:14px;border:1.5px dashed #d6d4ce;border-radius:12px">
+            <div style="width:56px;height:56px;border-radius:12px;background:{{ brand.c0 }};color:{{ brand.c2 }};display:grid;place-items:center;font-family:'Archivo Black',sans-serif;font-size:22px">{{ brandInit }}</div>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font-size:13.5px;font-weight:500">hydra-logo.svg</span><span style="font-size:12px;color:#8a8c91">SVG or PNG, transparent background, max 2 MB</span></div>
+            <button style="height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">Replace</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Colors</span>
+          <div style="display:flex;flex-wrap:wrap;gap:10px"><sc-for list="{{ brandColors }}" as="bc" hint-placeholder-count="3"><label style="display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border:1px solid #e1e0dc;border-radius:11px;cursor:pointer"><span style="position:relative;width:34px;height:34px;border-radius:8px;background:{{ bc.v }};border:1px solid rgba(0,0,0,.1);overflow:hidden"><input type="color" value="{{ bc.v }}" sc-camel-on-change="{{ bc.set }}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%"></span><span style="display:flex;flex-direction:column;line-height:1.25"><span style="font-size:12px;color:#6b6d72">{{ bc.label }}</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px;text-transform:uppercase">{{ bc.v }}</span></span></label></sc-for></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Heading font</span><sc-raw-select value="{{ brand.heading }}" sc-camel-on-change="{{ bset.heading }}" style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;background:#fff"><option>Archivo Black</option><option>Bebas Neue</option><option>Space Grotesk</option><option>DM Sans</option></sc-raw-select></label>
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Body font</span><sc-raw-select value="{{ brand.body }}" sc-camel-on-change="{{ bset.body }}" style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;background:#fff"><option>DM Sans</option><option>Space Grotesk</option><option>Geist</option></sc-raw-select></label>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:18px">
+        <span style="font-weight:600;font-size:15px">Defaults</span>
+        <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Default CTA</span><input value="{{ brand.cta }}" sc-camel-on-change="{{ bset.cta }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Instagram</span><input sc-camel-default-value="@hydra" style="height:40px;padding:0 12px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">TikTok</span><input sc-camel-default-value="@drinkhydra" style="height:40px;padding:0 12px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">YouTube</span><input sc-camel-default-value="@hydrabottle" style="height:40px;padding:0 12px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13.5px;outline:none;width:100%"></label>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;padding:14px;border-radius:12px;background:#f6f5f2">
+          <div style="display:flex;flex-direction:column;flex:1;gap:2px"><span style="font-size:13.5px;font-weight:500">Watermark</span><span style="font-size:12.5px;color:#6b6d72">Show your logo in the corner of every video</span></div>
+          <sc-raw-select value="{{ brand.wmPos }}" sc-camel-on-change="{{ bset.wmPos }}" style="height:34px;padding:0 8px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13px;background:#fff"><option>Top right</option><option>Top left</option><option>Bottom right</option><option>Bottom left</option></sc-raw-select>
+          <button sc-camel-on-click="{{ toggleWm }}" style="width:42px;height:24px;border-radius:99px;border:0;background:{{ wmTrack }};position:relative;cursor:pointer;flex:none"><span style="position:absolute;top:3px;left:{{ wmKnob }};width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)"></span></button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;position:sticky;top:80px">
+      <div style="position:relative;width:300px;max-width:100%;aspect-ratio:9/16;border-radius:22px;overflow:hidden;background:{{ brand.c0 }};box-shadow:0 20px 50px rgba(20,20,25,.25)">
+        <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 1px,transparent 1px 11px)"></div>
+        <sc-if value="{{ brand.wm }}"><div style="position:absolute;top:{{ wmCss.t }};bottom:{{ wmCss.b }};left:{{ wmCss.l }};right:{{ wmCss.r }};display:flex;align-items:center;gap:6px;opacity:.85"><div style="width:22px;height:22px;border-radius:6px;background:{{ brand.c2 }};color:{{ brand.c0 }};display:grid;place-items:center;font-family:'Archivo Black',sans-serif;font-size:11px">{{ brandInit }}</div><span style="color:{{ brand.c2 }};font-size:12px;font-weight:600;font-family:{{ brandBodyFF }}">{{ brand.name }}</span></div></sc-if>
+        <div style="position:absolute;left:18px;right:18px;top:40%;text-align:center;font-family:{{ brandHeadFF }};font-size:30px;line-height:1.05;text-transform:uppercase;color:{{ brand.c2 }}">Stay <span style="color:{{ brand.c1 }}">hydrated</span> all day</div>
+        <div style="position:absolute;left:18px;right:18px;bottom:26px;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="height:42px;padding:0 20px;border-radius:999px;background:{{ brand.c1 }};color:{{ brand.c0 }};display:flex;align-items:center;font-family:{{ brandBodyFF }};font-weight:700;font-size:14px">{{ brand.cta }}</div>
+          <span style="font-family:{{ brandBodyFF }};color:{{ brand.c2 }};opacity:.75;font-size:12px">{{ brand.web }}</span>
+        </div>
+      </div>
+      <span style="font-size:12px;color:#8a8c91;font-family:'Geist Mono',monospace">Live preview · end card</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- AI PROVIDERS -->
+<sc-if value="{{ s.providers }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><div style="display:flex;align-items:center;gap:8px"><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">AI Providers</h1><span style="font-size:10.5px;font-family:'Geist Mono',monospace;padding:2px 6px;border-radius:5px;background:#17181a;color:#fff">ADMIN</span></div><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Bring your own API keys. Every generation runs on accounts you control.</p></div>
+    <button sc-camel-on-click="{{ openCustom }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-plus" style="font-size:15px"></i>Add custom provider</button>
+  </div>
+  <div style="background:#111214;color:#e7e7ea;border-radius:16px;padding:22px 24px;display:flex;flex-wrap:wrap;gap:22px;align-items:center">
+    <div style="flex:1 1 300px;display:flex;flex-direction:column;gap:6px">
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-family:'Geist Mono',monospace;color:oklch(0.78 0.13 45)"><i class="icon-key-round" style="font-size:14px"></i>BRING YOUR OWN API KEYS</span>
+      <span style="font-size:17px;font-weight:600;line-height:1.4;color:#fff;text-wrap:pretty">You control your AI costs. Connect free providers to get started, or add paid providers when you need more capacity.</span>
+    </div>
+    <div style="flex:1 1 360px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px">
+      <div style="padding:10px 12px;border-radius:10px;border:1px solid #2b2d33;display:flex;align-items:center;gap:8px"><i class="icon-server" style="font-size:15px"></i>Your server</div>
+      <i class="icon-arrow-right" style="color:#6b6d72"></i>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><span style="padding:6px 10px;border-radius:8px;background:#1d1f23">Text</span><span style="padding:6px 10px;border-radius:8px;background:#1d1f23">Image</span><span style="padding:6px 10px;border-radius:8px;background:#1d1f23">Video</span><span style="padding:6px 10px;border-radius:8px;background:#1d1f23">Voice</span></div>
+      <i class="icon-arrow-right" style="color:#6b6d72"></i>
+      <div style="padding:10px 12px;border-radius:10px;border:1px solid #2b2d33;display:flex;align-items:center;gap:8px"><i class="icon-key-round" style="font-size:15px"></i>Your provider accounts</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+    <sc-for list="{{ provSummary }}" as="ps" hint-placeholder-count="4"><div style="background:#fff;border:1px solid #e8e7e3;border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border-radius:10px;background:#f3f2ef;display:grid;place-items:center"><i class="{{ ps.icon }}" style="font-size:16px"></i></div><div style="display:flex;flex-direction:column;line-height:1.3"><span style="font-size:13.5px;font-weight:500">{{ ps.title }}</span><span style="font-size:12px;color:#6b6d72">{{ ps.line }}</span></div></div></sc-for>
+  </div>
+  <sc-for list="{{ provSections }}" as="sec" hint-placeholder-count="4">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h2 style="margin:0;font-size:17px;font-weight:600">{{ sec.title }}</h2><span style="font-size:13px;color:#6b6d72">{{ sec.desc }}</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+        <sc-for list="{{ sec.items }}" as="pv" hint-placeholder-count="3">
+          <div style="background:#fff;border:1px solid {{ pv.bd }};border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(20,20,25,.04);opacity:{{ pv.op }}">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:40px;height:40px;border-radius:11px;background:{{ pv.monoBg }};color:#fff;display:grid;place-items:center;font-family:'Geist Mono',monospace;font-size:12.5px;font-weight:500;flex:none">{{ pv.mono }}</div>
+              <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0"><span style="font-weight:600;font-size:15px">{{ pv.name }}</span><span style="font-size:12px;color:#6b6d72">{{ pv.tier }}</span></div>
+              <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:500;background:{{ pv.sbg }};color:{{ pv.sfg }};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:currentColor"></span>{{ pv.statusLabel }}</span>
+            </div>
+            <sc-if value="{{ pv.configured }}">
+              <div style="display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:12.5px;padding:12px;border-radius:10px;background:#f8f7f5">
+                <span style="color:#8a8c91">Model</span><span style="font-family:'Geist Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pv.model }}</span>
+                <span style="color:#8a8c91">API key</span><span style="font-family:'Geist Mono',monospace">{{ pv.key }}</span>
+                <span style="color:#8a8c91">Last test</span><span style="font-family:'Geist Mono',monospace;color:{{ pv.testColor }}">{{ pv.test }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ pv.unconfigured }}"><div style="font-size:12.5px;color:#6b6d72;line-height:1.5;padding:12px;border-radius:10px;border:1px dashed #e1e0dc">Not connected. Add an API key to use this provider.</div></sc-if>
+            <div style="display:flex;gap:8px;margin-top:auto">
+              <button sc-camel-on-click="{{ pv.onCfg }}" style="flex:1;height:34px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer">{{ pv.cfgLabel }}</button>
+              <sc-if value="{{ pv.configured }}"><button sc-camel-on-click="{{ pv.onTest }}" style="flex:1;height:34px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px"><i class="{{ pv.testIcon }}" style="font-size:13px;display:inline-block;animation:{{ pv.testAnim }}"></i>{{ pv.testLabel }}</button>
+              <button sc-camel-on-click="{{ pv.onToggle }}" style="height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;color:{{ pv.toggleColor }}">{{ pv.toggleLabel }}</button></sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</sc-if>
+
+  </div>
+</main>
+
+<sc-if value="{{ cfgOpen }}" hint-placeholder-val="{{ false }}">
+<div sc-camel-on-click="{{ closeCfg }}" style="position:fixed;inset:0;background:rgba(10,10,12,.4);z-index:60"></div>
+<div style="position:fixed;top:0;right:0;bottom:0;width:440px;max-width:100%;background:#fff;z-index:61;display:flex;flex-direction:column;box-shadow:-20px 0 50px rgba(0,0,0,.15)">
+  <div style="display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid #f0efec">
+    <div style="width:38px;height:38px;border-radius:10px;background:#17181a;color:#fff;display:grid;place-items:center;font-family:'Geist Mono',monospace;font-size:12px">{{ cfg.mono }}</div>
+    <div style="display:flex;flex-direction:column;flex:1;line-height:1.3"><span style="font-weight:600;font-size:16px">Configure {{ cfg.name }}</span><span style="font-size:12.5px;color:#6b6d72">{{ cfg.cat }} AI · {{ cfg.tier }}</span></div>
+    <button sc-camel-on-click="{{ closeCfg }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer"><i class="icon-x" style="font-size:15px"></i></button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:18px">
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">API key</span><input name="cfg_key" type="password" sc-camel-default-value="{{ cfg.keyRaw }}" placeholder="Paste your API key" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font-family:'Geist Mono',monospace;font-size:13px;outline:none;width:100%"><span style="font-size:12px;color:#8a8c91">Stored encrypted on your server. Never sent to Reelsmith.</span></label>
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Base URL</span><input name="cfg_url" sc-camel-default-value="{{ cfg.url }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font-family:'Geist Mono',monospace;font-size:13px;outline:none;width:100%"></label>
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Default model</span><sc-raw-select name="cfg_model" sc-camel-default-value="{{ cfg.model }}" style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font-family:'Geist Mono',monospace;font-size:13px;background:#fff"><sc-for list="{{ cfg.models }}" as="o"><option>{{ o }}</option></sc-for></sc-raw-select></label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Timeout (s)</span><input sc-camel-default-value="60" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font-family:'Geist Mono',monospace;font-size:13px;outline:none;width:100%"></label>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Priority</span><sc-raw-select name="cfg_priority" style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:13px;background:#fff"><option>Primary</option><option>Fallback</option></sc-raw-select></label>
+    </div>
+    <div style="display:flex;gap:12px;padding:14px;border-radius:12px;background:#f6f5f2;font-size:12.5px;line-height:1.5;color:#55575c"><i class="icon-info" style="font-size:16px;margin-top:1px"></i><span>If this provider fails or hits a rate limit, jobs fall back to the next connected provider in the same category.</span></div>
+  </div>
+  <div style="display:flex;gap:10px;padding:16px 22px;border-top:1px solid #f0efec">
+    <button sc-camel-on-click="{{ closeCfg }}" style="flex:1;height:42px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:14px;cursor:pointer">Cancel</button>
+    <button sc-camel-on-click="{{ saveCfg }}" style="flex:1;height:42px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer">Save &amp; connect</button>
+  </div>
+</div>
+</sc-if>
+</div>

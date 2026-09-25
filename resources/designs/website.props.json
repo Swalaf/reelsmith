@@ -1,0 +1,32 @@
+{
+  "startPage": {
+    "editor": "enum",
+    "options": [
+      "home",
+      "features",
+      "pricing",
+      "providers",
+      "templates",
+      "template",
+      "docs",
+      "contact",
+      "about",
+      "legal",
+      "changelog",
+      "checkout",
+      "login",
+      "register",
+      "forgot",
+      "reset",
+      "verify",
+      "twofa",
+      "onboarding",
+      "e404",
+      "e500",
+      "maintenance",
+      "suspended"
+    ],
+    "default": "home",
+    "tsType": "string"
+  }
+}
