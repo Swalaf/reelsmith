@@ -23,6 +23,7 @@ class ReelsmithTest extends TestCase
         config(['app.installed' => true]);
         $this->seed(CatalogSeeder::class);
         Http::preventStrayRequests();
+        \App\Models\AiProvider::where('driver', 'none')->update(['status' => 'off']); // no edge-tts network calls in tests
     }
 
     private function user(array $attrs = []): User
@@ -78,7 +79,7 @@ class ReelsmithTest extends TestCase
         $this->postJson("/studio/projects/{$id}/render")->assertOk()->assertJsonPath('project.status', 'Processing');
         $this->assertSame(100 - $cost, $u->fresh()->credits);
 
-        (new RenderProject($id))->handle();
+        app()->call([new RenderProject($id), 'handle']);
         $this->assertSame('Completed', Project::find($id)->status);
     }
 
