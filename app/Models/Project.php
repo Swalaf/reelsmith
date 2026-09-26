@@ -82,6 +82,7 @@ class Project extends Model
             'captions' => $this->captions,
             'voice' => $this->voice,
             'music' => $this->music,
+            'thumb' => ($first = collect($this->scenes ?? [])->firstWhere('img')) ? Storage::disk('public')->url($first['img']) : null,
             'progress' => $this->render_progress,
             'stage' => $this->render_stage,
         ];

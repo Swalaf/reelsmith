@@ -332,7 +332,8 @@ class RenderProject implements ShouldQueue
     private function finish(Project $project, ?string $rel, float $started, array $used): void
     {
         $providers = implode(' · ', array_unique(array_filter(array_merge(explode(' · ', (string) $project->providers_used), explode(' + ', implode(' + ', $used))))));
-        $project->update(['status' => 'Completed', 'output_path' => $rel, 'error' => null, 'render_progress' => 100, 'render_stage' => 'Done',
+        [$w, $h] = $this->size($project->ratio);
+        $project->update(['status' => 'Completed', 'output_path' => $rel, 'error' => null, 'render_progress' => 100, 'render_stage' => "Done · {$w}×{$h}",
             'render_seconds' => (int) (microtime(true) - $started), 'providers_used' => mb_substr($providers, 0, 250)]);
         ActivityLog::record(sprintf('Render job for project #%d completed in %.1fs', $project->id, microtime(true) - $started), 'queue');
     }

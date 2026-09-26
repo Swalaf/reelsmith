@@ -55,6 +55,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::delete('/projects/{project}', [StudioController::class, 'destroy']);
         Route::post('/projects/{project}/script', [StudioController::class, 'regenerate']);
         Route::post('/projects/{project}/render', [StudioController::class, 'render']);
+        Route::post('/projects/{project}/scenes/{scene}/visual', [StudioController::class, 'sceneVisual'])->middleware('throttle:30,1');
+        Route::post('/projects/{project}/scenes/{scene}/upload', [StudioController::class, 'sceneUpload']);
+        Route::get('/media', [StudioController::class, 'media']);
+        Route::post('/voices/preview', [StudioController::class, 'voicePreview'])->middleware('throttle:20,1');
         Route::put('/brand', [StudioController::class, 'brand']);
         Route::post('/providers/{provider:slug}/test', [StudioController::class, 'testProvider'])->middleware('throttle:30,1');
     });

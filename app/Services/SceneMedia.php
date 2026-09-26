@@ -16,6 +16,14 @@ class SceneMedia
 {
     public function __construct(private AiGateway $ai = new AiGateway) {}
 
+    /** Try this provider slug first (with fallback to the rest). */
+    public function prefer(?string $slug): static
+    {
+        $this->ai->prefer = $slug;
+
+        return $this;
+    }
+
     public function dir(Project $project): string
     {
         $dir = 'projects/'.$project->id;

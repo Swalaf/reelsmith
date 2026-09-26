@@ -7,6 +7,7 @@ use App\Models\AiProvider;
 use App\Models\ApiKey;
 use App\Models\Plan;
 use App\Models\Project;
+use App\Models\Setting;
 use App\Models\User;
 use Database\Seeders\CatalogSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +24,8 @@ class ReelsmithTest extends TestCase
         config(['app.installed' => true]);
         $this->seed(CatalogSeeder::class);
         Http::preventStrayRequests();
-        \App\Models\AiProvider::where('driver', 'none')->update(['status' => 'off']); // no edge-tts network calls in tests
+        Setting::put('values', ['set_rendering_default_resolution' => '720p']);
+        AiProvider::where('driver', 'none')->update(['status' => 'off']); // no edge-tts network calls in tests
     }
 
     private function user(array $attrs = []): User
@@ -81,6 +83,23 @@ class ReelsmithTest extends TestCase
 
         app()->call([new RenderProject($id), 'handle']);
         $this->assertSame('Completed', Project::find($id)->status);
+    }
+
+    public function test_saving_scenes_keeps_every_field_and_server_media(): void
+    {
+        $u = $this->user();
+        $p = $u->projects()->create(['name' => 'S', 'scenes' => [['id' => 1, 'prompt' => 'old', 'narration' => 'n', 'dur' => 5, 'img' => 'projects/x/a.png', 'audio' => 'projects/x/v.mp3']]]);
+        $this->actingAs($u)->putJson("/studio/projects/{$p->id}", ['scenes' => [
+            ['id' => 1, 'prompt' => 'new prompt', 'narration' => 'new line', 'caption' => 'Hi', 'dur' => 6, 'src' => 'AI Image', 'img' => 'hack.png'],
+            ['id' => 2, 'prompt' => 'second', 'narration' => 'two', 'dur' => 4],
+        ], 'music' => 'Soft Focus'])->assertOk();
+
+        $scenes = $p->fresh()->scenes;
+        $this->assertSame('new prompt', $scenes[0]['prompt']);
+        $this->assertSame(6, $scenes[0]['dur']);
+        $this->assertSame('projects/x/a.png', $scenes[0]['img'], 'client cannot overwrite media paths');
+        $this->assertSame('second', $scenes[1]['prompt']);
+        $this->assertSame('Soft Focus', $p->fresh()->music);
     }
 
     public function test_render_is_refused_without_enough_credits(): void

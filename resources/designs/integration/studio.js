@@ -14,17 +14,107 @@ class Component extends DesignComponent {
     if (R.project) Object.assign(this.state, this.projectState(R.project), { screen: 'editor' });
   }
 
-  toVideo(x) { return { id: x.id, name: x.name, dur: x.dur, status: x.status, date: x.date, platform: x.platform, ratio: x.ratio, c: x.c, ts: x.ts, url: x.url, credits: x.credits }; }
+  toVideo(x) { return { id: x.id, name: x.name, dur: x.dur, status: x.status, date: x.date, platform: x.platform, ratio: x.ratio, c: x.thumb ? this.bgUrl(x.thumb, x.c) : x.c, ts: x.ts, url: x.url, credits: x.credits }; }
+
+  bgUrl(url, fallback) { return "url('" + url + "') center/cover no-repeat, " + (fallback || '#23343f'); }
+  sceneBg(sc) { return sc && sc.imgUrl ? this.bgUrl(sc.imgUrl, sc.c) : (sc ? sc.c : '#23343f'); }
+  TRACK_NAMES = ['Uplifting Corporate', 'Soft Focus', 'Night Drive', 'Morning Run'];
 
   projectState(x) {
     const st = { projectId: x.id, output: x };
     if (x.idea) st.idea = { ...this.state.idea, ...x.idea };
     if (x.script) st.script = { ...this.state.script, ...x.script };
-    if (x.scenes && x.scenes.length) { st.scenes = x.scenes.map((sc, i) => ({ rg: false, vp: 0, v: 'none', src: 'AI Image', tr: 'Fade', ...sc, id: sc.id || i + 1 })); st.nextId = Math.max(...st.scenes.map(s => s.id)) + 1; st.edSel = 0; st.edT = 0; }
+    if (x.scenes && x.scenes.length) { st.scenes = x.scenes.map((sc, i) => this.fromServer(sc, i)); st.nextId = Math.max(...st.scenes.map(s => s.id)) + 1; st.edSel = 0; st.edT = 0; }
+    st.track = x.music === null || x.music === undefined ? 0 : Math.max(0, this.TRACK_NAMES.indexOf(x.music) === -1 ? 4 : this.TRACK_NAMES.indexOf(x.music));
     if (x.captions) st.cap = { ...this.state.cap, ...x.captions };
     if (x.voice) st.voice = x.voice;
     return st;
   }
+
+  fromServer(sc, i) { return { rg: false, vp: 0, src: 'AI Image', tr: 'Fade', ...sc, v: sc.imgUrl || sc.clipUrl ? 'done' : 'none', id: sc.id || i + 1 }; }
+
+  /** Replace one scene with the server's copy, keeping unsaved local edits to the others. */
+  applyServerScene(project, id) {
+    const fresh = (project.scenes || []).find(x => x.id === id);
+    if (!fresh) return;
+    this.setState(st => ({ scenes: st.scenes.map((x, i) => x.id === id ? this.fromServer(fresh, i) : x) }));
+    this.upsert(project);
+  }
+
+  async genVisual(sceneId, src) {
+    const s = this.state;
+    if (!s.projectId) return;
+    await this.save();
+    this.updScene(sceneId, { v: 'loading', vp: 0, rg: true });
+    try {
+      const sc = this.state.scenes.find(x => x.id === sceneId) || {};
+      const want = src || (sc.src === 'AI Video' ? 'AI Video' : 'AI Image');
+      const pick = this.providerFor(sceneId, want === 'AI Video' ? 'Video' : 'Image');
+      const r = await rs.post('/studio/projects/' + s.projectId + '/scenes/' + sceneId + '/visual', { src: want, provider: pick ? pick.id : null, model: rs.val('vis_model_' + sceneId) || null });
+      if (r.user) window.RS.user = r.user;
+      this.applyServerScene(r.project, sceneId);
+      this.loadMedia();
+    } catch (e) {
+      this.updScene(sceneId, { v: 'none', vp: 0, rg: false });
+      alert('Could not generate this visual: ' + e.message);
+    }
+  }
+
+  pickFile(sceneId) {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/png,image/jpeg,image/webp,video/mp4,video/quicktime,video/webm';
+    input.onchange = async () => {
+      if (!input.files.length) return;
+      await this.save();
+      const fd = new FormData(); fd.append('file', input.files[0]);
+      this.updScene(sceneId, { v: 'loading', vp: 0 });
+      try {
+        const res = await fetch('/studio/projects/' + this.state.projectId + '/scenes/' + sceneId + '/upload', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': window.RS.csrf, 'Accept': 'application/json' } });
+        const r = await res.json();
+        if (!res.ok) throw new Error(r.message || 'Upload failed');
+        this.applyServerScene(r.project, sceneId); this.loadMedia();
+      } catch (e) { this.updScene(sceneId, { v: 'none' }); alert(e.message); }
+    };
+    input.click();
+  }
+
+  async useMedia(sceneId, path) {
+    if (!this.state.projectId) return;
+    await this.save();
+    try { const r = await rs.post('/studio/projects/' + this.state.projectId + '/scenes/' + sceneId + '/upload', { media: path }); this.applyServerScene(r.project, sceneId); } catch (e) { alert(e.message); }
+  }
+
+  /** The provider chosen in a scene's dropdown (defaults to the highest-priority connected one). */
+  providerFor(sceneId, cat) {
+    const list = this.state.prov.filter(p => p.cat === cat && p.status === 'connected');
+    const chosen = (this.state.provChoice || {})[sceneId + ':' + cat];
+    return list.find(p => p.name === chosen) || list[0] || null;
+  }
+
+  async loadMedia() { try { const r = await rs.get('/studio/media'); this.setState({ media: r.media || [] }); } catch (e) {} }
+
+  async previewVoice(name) {
+    if (this.audio) { this.audio.pause(); this.audio = null; }
+    if (this.state.playing === name) { this.setState({ playing: null }); return; }
+    this.setState({ playing: name });
+    try {
+      const r = await rs.post('/studio/voices/preview', { voice: name });
+      this.audio = new Audio(r.url);
+      this.audio.onended = () => this.setState({ playing: null });
+      await this.audio.play();
+    } catch (e) { this.setState({ playing: null }); alert('Voice preview unavailable: ' + e.message); }
+  }
+
+  // Replaces the design's timer: generation and render progress come from the server.
+  tick = () => {
+    const s = this.state, up = {}; this.tk = (this.tk || 0) + 1;
+    if (s.screen === 'create' && s.step === 5 && this.tk % 4 === 0) up.wi = (s.wi + 1) % this.WORDS.length;
+    if (s.screen === 'editor' && s.edPlay) { let t = s.edT + 0.1; if (t >= this.total()) { t = 0; up.edPlay = false; } up.edT = t; }
+    if (s.scenes.some(x => x.v === 'loading' && x.vp < 92)) up.scenes = s.scenes.map(x => x.v === 'loading' ? { ...x, vp: Math.min(92, x.vp + 1.5) } : x);
+    if (Object.keys(up).length) this.setState(up);
+  };
+
+  componentDidMount() { super.componentDidMount(); this.loadMedia(); }
 
   upsert(x) {
     const v = this.toVideo(x), i = this.VIDEOS.findIndex(y => y.id === x.id);
@@ -33,7 +123,7 @@ class Component extends DesignComponent {
 
   payload() {
     const s = this.state;
-    return { idea: s.idea, script: s.script, scenes: s.scenes.map(({ id, prompt, narration, caption, dur, src, c, tr, v }) => ({ id, prompt, narration, caption, dur, src, c, tr, v: v === 'loading' ? 'none' : v })), captions: s.cap, voice: s.voice };
+    return { idea: s.idea, script: s.script, scenes: s.scenes.map(({ id, prompt, narration, caption, dur, src, c, tr }) => ({ id, prompt, narration, caption, dur, src, c, tr })), captions: s.cap, voice: s.voice, music: s.track === 4 ? 'None' : this.TRACK_NAMES[s.track || 0] };
   }
 
   async save() {
@@ -69,8 +159,8 @@ class Component extends DesignComponent {
         const r = await rs.post('/studio/projects/' + s.projectId + '/render');
         this.upsert(r.project);
         if (r.user) window.RS.user = r.user;
-        this.setState({ output: r.project });
-        super.startRender();
+        this.setState({ output: r.project, renderP: 0, rendering: true });
+        this.go('render');
         this.poll(s.projectId);
       } catch (e) { alert(e.message); }
     })();
@@ -82,11 +172,13 @@ class Component extends DesignComponent {
       try {
         const r = await rs.get('/studio/projects/' + id);
         this.upsert(r.project);
-        this.setState({ output: r.project });
-        if (r.project.status === 'Processing') this.poll(id);
-        else if (r.project.status === 'Failed') { this.setState({ rendering: false }); alert('Render failed: ' + (r.project.error || 'unknown error') + '. Credits were refunded.'); }
+        const done = r.project.status !== 'Processing';
+        this.setState({ output: r.project, renderP: r.project.status === 'Completed' ? 100 : (r.project.progress || 0), rendering: !done });
+        if (done && r.project.scenes) this.setState({ scenes: r.project.scenes.map((sc, i) => this.fromServer(sc, i)) });
+        if (!done) this.poll(id);
+        else if (r.project.status === 'Failed') alert('Render failed: ' + (r.project.error || 'unknown error') + '. Credits were refunded.');
       } catch (e) { this.poll(id); }
-    }, 2500);
+    }, 2000);
   }
 
   setBrand = (k, v) => {
@@ -144,7 +236,44 @@ class Component extends DesignComponent {
     const ratio = o.ratio || s.idea.ratio;
     v.out = { res: { '16:9': '1280×720', '1:1': '1080×1080', '4:5': '1080×1350' }[ratio] || '720×1280', size: o.status === 'Completed' ? (o.url ? 'MP4' : 'no file') : '—', credits: String(o.credits || 0) };
     v.download = () => { if (o.url) window.open(o.url, '_blank'); else alert(o.status === 'Completed' ? 'This render produced no file — FFmpeg is not installed on the server.' : 'The video is still rendering.'); };
-    if (s.renderP >= 100 && o.status === 'Processing') { v.renderActive = true; v.renderDone = false; v.renderPct = '99%'; v.eta = 'Finishing up…'; }
+    v.eta = o.status === 'Processing' ? (o.stage || 'Queued…') : v.eta;
+    const dims = /(\d+)×(\d+)/.exec(o.stage || '');
+    if (dims) v.out.res = dims[1] + '×' + dims[2];
+    const ar = (o.ratio || s.idea.ratio || '9:16').replace(':', '/');
+    v.out = { ...v.out, url: o.status === 'Completed' ? o.url : null, ar, w: ar === '16/9' ? '360px' : ar === '1/1' ? '280px' : '220px', bg: o.thumb ? this.bgUrl(o.thumb) : '#2f4b4b' };
+    v.out.size = o.status === 'Completed' && o.url ? 'MP4 · ' + (o.dur || '') : v.out.size;
+
+    // Scene visuals: real generation, uploads, media library, thumbnails
+    const media = s.media || [];
+    v.libMore = media.length > 5 ? '+' + (media.length - 5) : String(media.length || 0);
+    v.sceneRows = v.sceneRows.map(x => ({ ...x, c: this.sceneBg(x), onRegen: () => this.genVisual(x.id) }));
+    v.visRows = v.visRows.map(x => ({ ...x,
+      thumbBg: x.v === 'done' ? this.sceneBg(x) : x.thumbBg,
+      onGen: () => this.genVisual(x.id, x.src === 'AI Video' ? 'AI Video' : 'AI Image'),
+      onUpload: () => this.pickFile(x.id),
+      lib: media.slice(0, 5).map(m => ({ bg: this.bgUrl(m.url), on: () => this.useMedia(x.id, m.path) })),
+      cost: x.src === 'AI Video' ? '≈ 8 credits · AI video clip' : '≈ 1 credit · AI image',
+      ...(() => {
+        const cat = x.src === 'AI Video' ? 'Video' : 'Image';
+        const list = s.prov.filter(p => p.cat === cat && p.status === 'connected');
+        const cur = this.providerFor(x.id, cat);
+        return { provs: list.length ? list.map(p => p.name) : ['No ' + cat.toLowerCase() + ' provider connected'], models: cur && cur.models && cur.models.length ? cur.models : [cur ? cur.model : '—'],
+          provKey: cat + ':' + (cur ? cur.id : 'none'), onProv: e => { const val = e.target.value; this.setState(st => ({ provChoice: { ...(st.provChoice || {}), [x.id + ':' + cat]: val } })); } };
+      })() }));
+    v.genAll = async () => { for (const x of this.state.scenes.filter(y => y.v === 'none' && ['AI Image', 'AI Video'].includes(y.src))) await this.genVisual(x.id); };
+    v.libPick = media.slice(0, 5).map(m => this.bgUrl(m.url));
+    const es = s.scenes[Math.min(s.edSel, s.scenes.length - 1)] || {};
+    v.edScenes = v.edScenes.map((e, i) => ({ ...e, c: this.sceneBg(s.scenes[i]) }));
+    v.edCur = { ...v.edCur, c: this.sceneBg(s.scenes.find(x => x.id === v.edCur.id) || es) };
+    v.edRegen = () => this.genVisual(es.id);
+    v.edLib = media.slice(0, 8).map(m => ({ bg: this.bgUrl(m.url), on: () => this.useMedia(es.id, m.path) }));
+    v.edUpload = () => this.pickFile(es.id);
+
+    // Voice previews + music
+    v.voiceList = v.voiceList.map(vc => ({ ...vc, onPlay: () => this.previewVoice(vc.name) }));
+    const trackList = [...v.tracks, { name: 'No music', mood: 'Voice only', len: '—', bd: s.track === 4 ? '#17181a' : '#e8e7e3', bg: s.track === 4 ? '#f6f5f2' : '#fff' }];
+    v.tracks = trackList.map((t, i) => ({ ...t, on: () => { this.setState({ track: i }); setTimeout(() => this.save(), 0); } }));
+    v.trackName = trackList[s.track || 0].name + ' · ' + trackList[s.track || 0].mood;
 
     // Providers (installation-wide, managed by admins)
     const catMeta = { Text: 'type', Image: 'image', Video: 'clapperboard', Voice: 'mic' };

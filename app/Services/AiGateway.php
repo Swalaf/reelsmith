@@ -236,11 +236,15 @@ class AiGateway
 
     // ------------------------------------------------------------- plumbing
 
+    /** Slug of a provider to try first (the one picked in the Studio), then the usual order. */
+    public ?string $prefer = null;
+
     /** Connected providers for a category, best first. */
     public function providers(string $category): Collection
     {
         return AiProvider::where('category', $category)->where('status', 'connected')->orderBy('priority')->get()
-            ->filter(fn (AiProvider $p) => ! $p->needsKey() || $p->api_key)->values();
+            ->filter(fn (AiProvider $p) => ! $p->needsKey() || $p->api_key)
+            ->sortBy(fn (AiProvider $p) => $p->slug === $this->prefer ? 0 : 1, SORT_REGULAR)->values();
     }
 
     public function available(string $category): bool
