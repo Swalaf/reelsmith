@@ -24,6 +24,7 @@ class Boot
             'plan' => $plan?->name ?? 'Free',
             'planLabel' => ($plan?->name ?? 'Free').' plan',
             'impersonating' => session()->has('impersonator_id'),
+            'verified' => $u->email_verified_at !== null,
         ];
     }
 }

@@ -41,9 +41,13 @@ Route::middleware('throttle:20,1')->group(function () {
     Route::post('/contact', [SiteController::class, 'contact']);
 });
 Route::post('/logout', [AuthController::class, 'logout']);
+Route::post('/webhooks/stripe', [SiteController::class, 'stripeWebhook']);
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/checkout', [SiteController::class, 'checkout']);
+    Route::get('/checkout/return', [SiteController::class, 'checkoutReturn']);
+    Route::post('/verify', [AuthController::class, 'verify'])->middleware('throttle:10,1');
+    Route::post('/verify/resend', [AuthController::class, 'resend'])->middleware('throttle:3,1');
     Route::post('/onboarding', [SiteController::class, 'onboarding']);
 
     Route::get('/studio/{screen?}', [StudioController::class, 'show'])->where('screen', '[a-z]+');

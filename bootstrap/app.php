@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [EnsureInstalled::class]);
         $middleware->alias(['admin' => EnsureAdmin::class, 'active' => EnsureActive::class, 'api.key' => AuthenticateApiKey::class]);
         $middleware->redirectGuestsTo('/login');
+        $middleware->validateCsrfTokens(except: ['webhooks/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

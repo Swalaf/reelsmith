@@ -141,6 +141,10 @@ class Component extends DesignComponent {
     // Payments
     const GW = ['stripe', 'paypal', 'razorpay', 'paystack', 'bank'];
     v.gateways = v.gateways.map((g, i) => ({ ...g, toggle: () => { const gw = { ...s.gw, [GW[i]]: !s.gw[GW[i]] }; this.setState({ gw }); this.saveSetting('gateways', gw, g.name + (gw[GW[i]] ? ' enabled' : ' disabled')); } }));
+    const PS = A.gatewayStatus || {};
+    v.gateways = v.gateways.map((g, i) => GW[i] === 'stripe' ? { ...g, mode: PS.stripe ? 'Connected · Stripe Checkout' : 'Add your secret key in Settings → Payments' }
+      : GW[i] === 'paypal' ? { ...g, mode: PS.paypal ? 'Connected · PayPal Orders' : 'Add client ID + secret in Settings → Payments' }
+      : { ...g, mode: 'Not available yet' });
     v.txns = (s.payments || []).map(t => ({ ...t, sfg: this.ST[t.st][0], sbg: this.ST[t.st][1] }));
 
     // API keys
@@ -160,6 +164,13 @@ class Component extends DesignComponent {
     // Settings: give every text/select field a stable name and load saved values
     const vals = (A.settings && A.settings.values) || {};
     const slug = t => 'set_' + String(t).toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    const txt = (label, hint, secret) => ({ label, hint, isText: true, v: '', ff: "'Geist Mono',monospace", inputType: secret ? 'password' : 'text' });
+    const extra = {
+      'Email (SMTP)': [txt('SMTP username', ''), txt('SMTP password', 'Stored encrypted', true)],
+      'Payments': [txt('Stripe secret key', 'sk_live_… · stored encrypted', true), txt('Stripe webhook secret', 'whsec_… · endpoint: ' + location.origin + '/webhooks/stripe', true),
+        txt('PayPal client ID', ''), txt('PayPal secret', 'Stored encrypted', true), { label: 'PayPal mode', hint: '', isSelect: true, v: 'Live', options: ['Live', 'Sandbox'] }]
+    };
+    v.setGroups = v.setGroups.map(g => extra[g.title] ? { ...g, fields: [...g.fields, ...extra[g.title]] } : g);
     v.setGroups = v.setGroups.map(g => ({ ...g, fields: g.fields.map(f => { const n = slug(g.title + ' ' + f.label); return f.isToggle ? f : { ...f, name: n, v: vals[n] !== undefined ? vals[n] : f.v }; }) }));
     if (A.health) v.setGroups = v.setGroups.map(g => ({ ...g, fields: g.fields.map(f => f.isStatus && A.health[slug(g.title + ' ' + f.label)] ? { ...f, v: A.health[slug(g.title + ' ' + f.label)][0], sc: A.health[slug(g.title + ' ' + f.label)][1] ? 'oklch(0.45 0.12 150)' : 'oklch(0.5 0.18 25)' } : f) }));
     v.setGroups = v.setGroups.map(g => ({ ...g, fields: g.fields.map(f => f.isToggle ? { ...f, toggle: () => { f.toggle(); this.saveToggles(); } } : f) }));

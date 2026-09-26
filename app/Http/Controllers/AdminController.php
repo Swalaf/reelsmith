@@ -12,6 +12,7 @@ use App\Models\Project;
 use App\Models\Setting;
 use App\Models\Template;
 use App\Models\User;
+use App\Services\Payments;
 use App\Support\Branding;
 use App\Support\DesignPage;
 use App\Support\Ffmpeg;
@@ -53,7 +54,8 @@ class AdminController extends Controller
                 'providers' => $providers->map->toClient()->values(),
                 'apiKeys' => ApiKey::with('user')->latest()->get()->map->toClient()->values(),
                 'whitelabel' => Branding::whiteLabel(),
-                'settings' => $settings,
+                'settings' => array_merge($settings, ['values' => Setting::publicValues()]),
+                'gatewayStatus' => Payments::status(),
                 'plans' => Plan::withCount('users')->orderBy('sort')->get()->map->toClient()->values(),
                 'projects' => $projects->map->toClient()->values(),
                 'templates' => Template::orderBy('id')->get()->map->toClient()->values(),
@@ -281,7 +283,7 @@ class AdminController extends Controller
     {
         foreach (self::SETTING_KEYS as $k) {
             if ($request->has($k)) {
-                Setting::put($k, $request->input($k));
+                $k === 'values' ? Setting::putValues((array) $request->input($k)) : Setting::put($k, $request->input($k));
             }
         }
         if ($request->has('values') && ($path = $request->input('values.set_video_ffmpeg_path'))) {

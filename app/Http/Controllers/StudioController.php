@@ -56,6 +56,7 @@ class StudioController extends Controller
 
     public function store(Request $request, ScriptWriter $writer)
     {
+        $this->requireVerified($request);
         $data = $request->validate([
             'idea' => 'required|array', 'idea.topic' => 'required|string|max:200', 'idea.tone' => 'nullable|string|max:40',
             'idea.platform' => 'nullable|string|max:40', 'idea.dur' => 'nullable|string|max:8', 'idea.ratio' => 'nullable|in:9:16,16:9,1:1,4:5',
@@ -125,6 +126,7 @@ class StudioController extends Controller
     {
         $this->authorizeProject($request, $project);
         abort_if($project->status === 'Processing', 409, 'This video is already rendering.');
+        $this->requireVerified($request);
 
         $user = $request->user();
         $cost = $project->renderCost();
@@ -280,6 +282,13 @@ class StudioController extends Controller
 
             return $old ? $s + array_intersect_key($old, array_flip($keep)) : $s;
         }, $incoming));
+    }
+
+    private function requireVerified(Request $request): void
+    {
+        if (! $request->user()->email_verified_at && ! $request->user()->isAdmin() && AuthController::verificationRequired()) {
+            abort(403, 'Please verify your email address first — check your inbox for the 6-digit code.');
+        }
     }
 
     private function authorizeProject(Request $request, Project $project): void

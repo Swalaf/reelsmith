@@ -7,7 +7,8 @@ class Component extends DesignComponent {
     const R = window.RS;
     if (R.templates && R.templates.length) this.TPL = R.templates.map(t => [t.name, t.cat, t.dur, t.ratio]);
     this.state = { ...this.state, page: R.startPage || 'home', legal: R.legal || this.state.legal, tpl: Math.min(R.tpl || 0, this.TPL.length - 1),
-      rpw: '', rpw2: '', loginErr: false, loginMsg: '', formErr: '', forgotEmail: '', coPlan: this.coIndex(R.checkoutPlan) };
+      rpw: '', rpw2: '', loginErr: false, loginMsg: '', formErr: '', forgotEmail: '', coPlan: this.coIndex(R.checkoutPlan),
+      paid: R.checkoutResult === 'paid', declined: R.checkoutResult === 'failed', vcode: '', vErr: '', resent: false };
   }
 
   componentDidMount() {
@@ -66,11 +67,13 @@ class Component extends DesignComponent {
         busy('paying', true);
         try {
           const r = await rs.post('/checkout', { plan_id: cp.id, cycle: s.yearly ? 'yearly' : 'monthly', method: s.coMethod, coupon: rs.val('coupon') });
+          if (r.redirect) { window.location.href = r.redirect; return; }
           window.RS.user = r.user;
           this.setState({ paying: false, paid: true, declined: false });
         } catch (e) {
           if (e.status === 401) { this.go('login'); return; }
           this.setState({ paying: false, declined: true });
+          if (e.status === 422) alert(e.message);
         }
       };
     }
@@ -109,10 +112,22 @@ class Component extends DesignComponent {
         const r = await rs.post('/register', { name: rs.val('register_name'), email: rs.val('register_email'), password: s.rpw, password_confirmation: s.rpw2 });
         window.RS.user = r.user; window.RS.csrf = r.csrf || window.RS.csrf;
         this.setState({ registering: false, regEmail: r.user.email });
-        if (this.pendingCheckout) { this.pendingCheckout = false; this.go('checkout'); } else this.go('verify');
+        if (this.pendingCheckout) { this.pendingCheckout = false; this.go('checkout'); } else this.go(r.verify ? 'verify' : 'onboarding');
       } catch (e) { this.setState({ registering: false }); alert(e.message); }
     };
-    v.doVerify = () => { s.page === 'verify' ? this.go('onboarding') : this.after(window.RS.user); };
+    // Email verification: 6-digit code typed into the hidden input behind the boxes
+    const digits = (s.vcode || '').split('');
+    v.vcode = s.vcode; v.vErr = s.vErr;
+    v.setVcode = e => this.setState({ vcode: e.target.value.replace(/\D/g, '').slice(0, 6), vErr: '' });
+    v.codeBoxes = [0, 1, 2, 3, 4, 5].map(i => ({ v: digits[i] || '', bd: i === Math.min(digits.length, 5) ? '#17181a' : '#e1e0dc' }));
+    v.resendNote = s.resent ? ' · sent' : '';
+    v.resendCode = async () => { try { await rs.post('/verify/resend'); this.setState({ resent: true }); } catch (e) { alert(e.message); } };
+    v.doVerify = async () => {
+      if (s.page !== 'verify') { this.after(window.RS.user); return; }
+      if (window.RS.user && window.RS.user.verified) { this.go('onboarding'); return; }
+      try { const r = await rs.post('/verify', { code: s.vcode }); if (r.user) window.RS.user = r.user; this.go('onboarding'); }
+      catch (e) { this.setState({ vErr: e.message }); }
+    };
 
     // Forgot / reset password (Laravel password broker; emails go through the configured mailer)
     v.forgotEmail = s.forgotEmail || 'that address';

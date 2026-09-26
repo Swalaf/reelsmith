@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AiProvider;
 use App\Models\Plan;
 use App\Models\Template;
+use App\Services\Payments;
 use App\Support\Branding;
 use App\Support\DesignPage;
 use App\Support\Ffmpeg;
@@ -33,6 +34,8 @@ class PageController extends Controller
             'plans' => Plan::withCount('users')->orderBy('sort')->get()->map->toClient()->values(),
             'templates' => Template::where('status', 'Published')->orderBy('id')->get()->map->toClient()->values(),
             'checkoutPlan' => $request->query('plan'),
+            'checkoutResult' => $request->boolean('paid') ? 'paid' : ($request->boolean('failed') ? 'failed' : ($request->boolean('cancelled') ? 'cancelled' : null)),
+            'payments' => Payments::status(),
         ];
         if ($page === 'legal') {
             $boot['legal'] = in_array($arg, ['terms', 'privacy', 'refund', 'cookies', 'license'], true) ? $arg : 'terms';

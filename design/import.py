@@ -73,6 +73,13 @@ T = {
         ('<span style="font-size:14.5px;color:#6b6d72">For john@acme.co</span>', '<span style="font-size:14.5px;color:#6b6d72">For {{ resetEmail }}</span>', 1),
         ('We sent a 6-digit code to <b style="color:#17181a">john@acme.co</b>', 'We sent a 6-digit code to <b style="color:#17181a">{{ meEmail }}</b>', 1),
         ('A receipt is on its way to john@acme.co.', 'A receipt is on its way to {{ meEmail }}.', 1),
+        # Email verification: a real code input behind the six boxes, error line, resend
+        ('<div style="display:flex;gap:8px;justify-content:center"><sc-for list="{{ codeBoxes }}" as="c">',
+         '<div style="position:relative;display:flex;gap:8px;justify-content:center"><input name="verify_code" value="{{ vcode }}" onChange="{{ setVcode }}" inputMode="numeric" maxLength="6" autoComplete="one-time-code" aria-label="Verification code" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:text;font-size:16px;z-index:2"><sc-for list="{{ codeBoxes }}" as="c">', 1),
+        ('<button onClick="{{ doVerify }}" style="height:48px;border-radius:12px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer">Verify email</button>',
+         '<sc-if value="{{ vErr }}"><span style="color:oklch(0.5 0.18 25);font-size:13px;text-align:center">{{ vErr }}</span></sc-if><button onClick="{{ doVerify }}" style="height:48px;border-radius:12px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer">Verify email</button>', 1),
+        ('Didn\'t get it? <button style="background:none;border:0;padding:0;font:inherit;color:#17181a;font-weight:600;cursor:pointer">Resend code</button> · 0:42',
+         'Didn\'t get it? <button onClick="{{ resendCode }}" style="background:none;border:0;padding:0;font:inherit;color:#17181a;font-weight:600;cursor:pointer">Resend code</button>{{ resendNote }}', 1),
         # Checkout coupon + onboarding topic
         ('<input placeholder="Coupon code"', '<input name="coupon" placeholder="Coupon code"', 1),
         ('<input defaultValue="5 ways Hydra keeps you hydrated" style="height:50px', '<input name="ob_topic" defaultValue="5 ways Hydra keeps you hydrated" style="height:50px', 1),

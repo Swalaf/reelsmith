@@ -30,7 +30,7 @@ class ReelsmithTest extends TestCase
 
     private function user(array $attrs = []): User
     {
-        return User::create(array_merge(['name' => 'Jo Test', 'email' => 'jo@example.com', 'password' => 'Secret123', 'credits' => 100, 'plan_id' => Plan::where('slug', 'free')->value('id')], $attrs));
+        return User::create(array_merge(['name' => 'Jo Test', 'email' => 'jo@example.com', 'password' => 'Secret123', 'credits' => 100, 'plan_id' => Plan::where('slug', 'free')->value('id'), 'email_verified_at' => now()], $attrs));
     }
 
     public function test_uninstalled_app_redirects_to_installer_and_installer_locks_after_install(): void

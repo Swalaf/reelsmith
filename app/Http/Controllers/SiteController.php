@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\ContactMessage;
-use App\Models\Payment;
 use App\Models\Plan;
-use App\Models\Setting;
+use App\Services\Payments;
 use App\Support\Boot;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class SiteController extends Controller
 {
@@ -25,30 +23,31 @@ class SiteController extends Controller
         return ['ok' => true];
     }
 
-    /**
-     * Upgrade to a paid plan. No card data reaches this server: the design's card form is
-     * presentational until a real gateway (Stripe, PayPal, …) is connected, so orders are
-     * recorded as paid in test mode and the plan + credits are applied immediately.
-     */
-    public function checkout(Request $request)
+    /** Start a plan purchase: redirects to Stripe/PayPal (or completes instantly in local test mode). */
+    public function checkout(Request $request, Payments $payments)
     {
         $data = $request->validate(['plan_id' => 'required|exists:plans,id', 'cycle' => 'required|in:monthly,yearly', 'method' => 'nullable|string']);
         $plan = Plan::findOrFail($data['plan_id']);
         abort_if($plan->price <= 0, 422, 'Pick a paid plan.');
 
-        $user = $request->user();
-        $amount = $data['cycle'] === 'yearly' ? round($plan->price * 12 * 0.8, 2) : $plan->price;
-        $gateway = ($data['method'] ?? 'Card') === 'PayPal' ? 'PayPal' : 'Stripe';
-        $enabled = (array) Setting::get('gateways', ['stripe' => true, 'paypal' => true]);
-        abort_if(($enabled[strtolower($gateway)] ?? true) === false, 422, $gateway.' is not enabled.');
+        $result = $payments->start($request->user(), $plan, $data['cycle'], (string) ($data['method'] ?? 'Card'));
 
-        Payment::create(['user_id' => $user->id, 'reference' => 'txn_'.Str::lower(Str::random(8)), 'item' => $plan->name.' · '.$data['cycle'], 'gateway' => $gateway.' (test)', 'amount' => $amount, 'status' => 'Paid']);
-        $user->plan_id = $plan->id;
-        $user->save();
-        $user->adjustCredits($plan->credits, $plan->name.' plan credits');
-        ActivityLog::record($user->name.' upgraded to '.$plan->name.' · $'.number_format($amount, 2), 'payments');
+        return $result + ['user' => Boot::me($request->user()->fresh())];
+    }
 
-        return ['ok' => true, 'user' => Boot::me($user->fresh())];
+    /** Buyer returns from the gateway. */
+    public function checkoutReturn(Request $request, Payments $payments)
+    {
+        $ok = $payments->confirm((string) $request->query('gateway'), (string) $request->query('ref'), $request->query());
+
+        return redirect('/checkout?'.($ok ? 'paid=1' : 'failed=1'));
+    }
+
+    public function stripeWebhook(Request $request, Payments $payments)
+    {
+        return $payments->stripeWebhook($request->getContent(), $request->header('Stripe-Signature'))
+            ? response()->json(['received' => true])
+            : response()->json(['error' => 'invalid signature'], 400);
     }
 
     public function onboarding(Request $request)
