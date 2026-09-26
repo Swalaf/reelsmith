@@ -144,7 +144,7 @@ class Component extends DesignComponent {
     const PS = A.gatewayStatus || {};
     v.gateways = v.gateways.map((g, i) => GW[i] === 'stripe' ? { ...g, mode: PS.stripe ? 'Connected · Stripe Checkout' : 'Add your secret key in Settings → Payments' }
       : GW[i] === 'paypal' ? { ...g, mode: PS.paypal ? 'Connected · PayPal Orders' : 'Add client ID + secret in Settings → Payments' }
-      : { ...g, mode: 'Not available yet' });
+      : { ...g, mode: 'Not available yet' }).map(g => ({ ...g, configure: () => { this.setState({ setTab: 'Payments' }); this.go('settings'); } }));
     v.txns = (s.payments || []).map(t => ({ ...t, sfg: this.ST[t.st][0], sbg: this.ST[t.st][1] }));
 
     // API keys

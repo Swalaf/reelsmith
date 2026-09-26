@@ -6,9 +6,9 @@ Claude Design screens from the *Reelsmith* project as real, database-backed page
 | Page | URL | What's real |
 |---|---|---|
 | **Website** | `/`, `/pricing`, `/templates`, `/docs`, `/contact`, `/legal/*`, `/changelog` … | Plans and templates come from the database, the contact form is stored, and the cookie banner works |
-| **Auth** | `/login`, `/register`, `/forgot-password`, `/reset-password/{token}`, `/verify`, `/onboarding` | Session login, registration (+ sign-up credits), password reset through Laravel's broker, and saved onboarding answers |
-| **Checkout** | `/checkout` | Switches the user's plan, adds plan credits and records a payment (test-mode gateway, see below) |
-| **Studio** | `/studio`, `/studio/{screen}` | Create a video (idea → script + scene plan), edit script/scenes/captions/voice, render with FFmpeg and credits, plus library, templates, brand kit and provider status/test |
+| **Auth** | `/login`, `/register`, `/forgot-password`, `/reset-password/{token}`, `/verify`, `/onboarding` | Session login, registration (+ sign-up credits), emailed 6-digit verification codes, password reset, and saved onboarding answers |
+| **Checkout** | `/checkout` | Stripe Checkout or PayPal; the plan and credits are applied once the gateway confirms payment |
+| **Studio** | `/studio`, `/studio/{screen}` | Idea → AI script → per-scene AI images/clips/uploads → voiceover → captions → FFmpeg render with music, plus live progress, library, media library, templates, brand kit and voice previews |
 | **AI Platform** | `/platform` | Workflows, cinematic, agents and repurposing screens (client-side; shares the user, credits and branding) |
 | **Admin** | `/admin`, `/admin/{screen}` | Live KPIs and charts, users (suspend, delete, credits, impersonate), projects, AI providers (add/edit/test/toggle, encrypted keys), models, templates, plans CRUD, payments, API keys, white label, pages CMS, settings and logs |
 | **Installer** | `/install` | Real requirement checks, a database test (MySQL/MariaDB or SQLite) and provider key tests; it writes `.env`, migrates, seeds, creates the admin and then locks itself |
@@ -27,7 +27,7 @@ composer install
 cp .env.example .env && php artisan key:generate
 touch database/database.sqlite
 php artisan reelsmith:install --email=admin@example.com --password=Admin12345 --demo
-php artisan serve
+PHP_CLI_SERVER_WORKERS=4 php artisan serve
 ```
 
 Open http://localhost:8000 and log in as the admin above, or register a new user.
@@ -64,20 +64,51 @@ what needs the backend: loading data and running actions. To pull in a newer ver
 design, replace the files in `design/src/` and run `python3 design/import.py`. The importer fails
 loudly if a patch no longer applies.
 
-## AI providers
+## How a video gets made
 
-Script writing uses the highest-priority *connected* OpenAI-compatible text provider
-(OpenRouter, Groq, a custom vLLM/Ollama endpoint, …). If none is available it falls back to a
-built-in writer, so the app works with no keys at all. Keys are stored encrypted with `APP_KEY`,
-and "Test connection" makes a real authenticated request to the provider.
+1. **Script**: the connected Text provider writes the script and a timed scene plan. You can use OpenRouter, Groq, Gemini, Cloudflare Workers AI, Hugging Face or any OpenAI-compatible endpoint. With no provider connected, a built-in writer does it.
+2. **Visuals**: each scene gets an AI image (Cloudflare Workers AI, Hugging Face, Stability AI, Replicate, Fal.ai or an OpenAI-compatible images API). Scenes set to *AI Video* get a motion clip (Fal.ai, Replicate, Luma or Runway). You can also upload your own image/MP4 or reuse anything from your Media Library. Generate per scene in the Studio, or let the render fill in whatever is missing.
+3. **Voice**: each scene's narration is spoken with the chosen voice (ElevenLabs, OpenAI TTS, Edge TTS or Piper).
+4. **Render**: FFmpeg builds one segment per scene. Stills get a slow Ken Burns zoom and clips are cropped to fit. Scenes fade between each other, and narration captions are timed to the voiceover in your caption style, with a brand and free-plan watermark. The segments are joined and background music is ducked under the voice. The Studio shows live progress, and the user gets an email when the video is ready.
+
+Every step falls back to the next connected provider when one fails, and every failure is written to **Admin → Logs**. If a scene has no working provider it becomes a colour card or a silent scene rather than failing the render. Only an FFmpeg failure fails the render, and then the credits are refunded.
+
+### Connecting providers (Admin → AI Providers → Edit)
+
+| Provider | What to enter |
+|---|---|
+| OpenRouter, Groq, OpenAI, custom vLLM/Ollama | API key; base URL is pre-filled (custom: your `/v1` URL) |
+| Cloudflare Workers AI | API token, and **Base URL = `https://api.cloudflare.com/client/v4/accounts/<your account id>`** |
+| Hugging Face | Access token |
+| Google Gemini, Stability AI, Replicate, Fal.ai, Luma, Runway, ElevenLabs | API key |
+| Edge TTS (free) | No key. Install it on the server: `pip install edge-tts` |
+| Piper (offline) | Install `piper` and set the model to the full path of a `.onnx` voice |
+
+"Test connection" makes a real authenticated request. Keys are stored encrypted with `APP_KEY`.
+
+### Server extras
+
+- **FFmpeg** with libfreetype (the normal distro package, e.g. `apt install ffmpeg`). Captions need `drawtext`. Without it the video still renders, just without captions.
+- **Caption fonts**: drop TTF files into `storage/app/fonts/` named after the Studio font (`Archivo Black.ttf`, `Bebas Neue.ttf`, …) or `default.ttf`. Otherwise a system font such as DejaVu Sans Bold is used.
+- **Music**: put MP3s at `storage/app/public/music/uplifting-corporate.mp3`, `soft-focus.mp3`, `night-drive.mp3` and `morning-run.mp3`. Tracks without a file use a generated ambient pad.
+- **Rendering takes minutes with real providers.** Use a queue worker in production (`QUEUE_CONNECTION=database` and `php artisan queue:work --queue=render,default --timeout=1800`). With `sync`, renders run after the response on PHP-FPM. For local development run `PHP_CLI_SERVER_WORKERS=4 php artisan serve`, because the single-worker dev server blocks while rendering.
+
+## Payments
+
+Set keys in **Admin → Settings → Payments** (stored encrypted) or in `.env` (`STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`, `PAYPAL_MODE=sandbox|live`).
+
+- **Stripe**: buyers are sent to Stripe Checkout. The plan and credits are applied only after Stripe confirms the payment, either when the buyer returns or via the webhook `POST /webhooks/stripe` (event `checkout.session.completed`, signed with the webhook secret).
+- **PayPal**: buyers approve the order on PayPal, and it is captured when they return.
+- **No gateway configured**: on a live site checkout is refused. Only local/debug installs complete orders in test mode.
+
+## Email
+
+Set SMTP in **Admin → Settings → Email** (host, port, from address, username, password). It overrides `.env`. New users get a 6-digit verification code (the toggle is under Settings → General → *Require email verification*), and until they verify they can't create or render videos. Password resets and "your video is ready" emails use the same mailer.
 
 ## Current limits
 
-- **Visuals and voice** aren't generated by AI providers yet: renders use each scene's
-  colour and caption. Script generation *is* live.
-- **Payments** run in test mode, and no card data reaches the server. Connect a real gateway
-  in `SiteController::checkout` before charging customers.
-- **Email verification and 2FA** screens follow the design, but their codes aren't enforced.
-- **S3 storage**: the installer saves the credentials, but S3 uploads need
-  `composer require league/flysystem-aws-s3-v3` and `FILESYSTEM_DISK=s3`.
-- The AI Platform canvas (workflows, agents, cinematic) is client-side only.
+- The AI Platform canvas (workflows, agents, cinematic) is client-side only; nothing there is saved.
+- Studio sidebar items without a designed screen (Media Library, Credits, Usage, API, Settings, Support) open the dashboard.
+- Two-factor authentication follows the design, but codes aren't enforced yet.
+- S3 storage: install `league/flysystem-aws-s3-v3` and set `FILESYSTEM_DISK=s3` (the installer saves the credentials).
+- Razorpay, Paystack and bank transfer are shown in the design but not implemented.

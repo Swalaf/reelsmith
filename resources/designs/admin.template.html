@@ -409,7 +409,7 @@ a{color:#17181a;text-decoration:none}a:hover{color:oklch(0.58 0.19 35)}
     <sc-for list="{{ gateways }}" as="g" hint-placeholder-count="5">
       <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px">
         <div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:9px;background:{{ g.mbg }};color:#fff;display:grid;place-items:center;font-family:'Geist Mono',monospace;font-size:11.5px">{{ g.mono }}</span><div style="display:flex;flex-direction:column;flex:1;line-height:1.3"><span style="font-weight:500">{{ g.name }}</span><span style="font-size:12px;color:#6b6d72">{{ g.mode }}</span></div><button sc-camel-on-click="{{ g.toggle }}" style="width:38px;height:22px;border-radius:99px;border:0;background:{{ g.trk }};position:relative;cursor:pointer"><span style="position:absolute;top:3px;left:{{ g.knob }};width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s"></span></button></div>
-        <button style="height:32px;border-radius:8px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;cursor:pointer">Configure keys</button>
+        <button sc-camel-on-click="{{ g.configure }}" style="height:32px;border-radius:8px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;cursor:pointer">Configure keys</button>
       </div>
     </sc-for>
   </div>

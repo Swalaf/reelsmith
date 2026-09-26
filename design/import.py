@@ -152,6 +152,8 @@ T = {
         ('font-family:\'Geist Mono\',monospace">$38,420</div>', 'font-family:\'Geist Mono\',monospace">{{ revTotal }}</div>', 1),
         ('All systems normal', '{{ sysLabel }}', 1),
         ('<input placeholder="Reason (visible in user\'s credit history)"', '<input name="adj_reason" placeholder="Reason (visible in user\'s credit history)"', 1),
+        ('<button style="height:32px;border-radius:8px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;cursor:pointer">Configure keys</button>',
+         '<button onClick="{{ g.configure }}" style="height:32px;border-radius:8px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:12.5px;cursor:pointer">Configure keys</button>', 1),
         # Provider drawer
         ('<span style="font-size:12.5px;font-weight:500;color:#3a3c40">Type</span><select style=', '<span style="font-size:12.5px;font-weight:500;color:#3a3c40">Type</span><select name="pd_type" defaultValue="{{ pd.type }}" style=', 1),
         ('<input type="password" defaultValue="{{ pd.key }}"', '<input name="pd_key" type="password" defaultValue="{{ pd.key }}"', 1),
