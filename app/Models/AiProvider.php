@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\AiGateway;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\Process\ExecutableFinder;
 
 class AiProvider extends Model
 {
@@ -38,8 +40,16 @@ class AiProvider extends Model
      */
     public function testConnection(): array
     {
-        if (! $this->needsKey()) {
-            return ['ok' => true, 'ms' => 0, 'message' => 'No key required'];
+        if ($this->driver === 'none') {
+            $bin = AiGateway::edgeTtsBinary();
+
+            return $bin ? ['ok' => true, 'ms' => 0, 'message' => 'OK · edge-tts found'] : ['ok' => false, 'ms' => 0, 'message' => 'edge-tts not installed on the server (pip install edge-tts)'];
+        }
+        if ($this->driver === 'local') {
+            $bin = (new ExecutableFinder)->find('piper');
+
+            return $bin && is_file((string) $this->model) ? ['ok' => true, 'ms' => 0, 'message' => 'OK · piper + voice model found']
+                : ['ok' => false, 'ms' => 0, 'message' => $bin ? 'Set the model to the path of a .onnx voice' : 'piper not installed on the server'];
         }
         if (! $this->api_key) {
             return ['ok' => false, 'ms' => 0, 'message' => 'No API key configured'];
@@ -48,6 +58,9 @@ class AiProvider extends Model
         $base = rtrim((string) $this->base_url, '/');
         $key = (string) $this->api_key;
         $start = microtime(true);
+        // Providers without a cheap "who am I" endpoint are probed with an empty request:
+        // a validation error (400/422) proves the key was accepted.
+        $validationMeansOk = in_array($this->driver, ['fal', 'generic'], true);
 
         try {
             $http = Http::timeout(15)->acceptJson();
@@ -55,12 +68,19 @@ class AiProvider extends Model
                 'gemini' => $http->get($base.'/v1beta/models', ['key' => $key]),
                 'elevenlabs' => $http->withHeaders(['xi-api-key' => $key])->get($base.'/user'),
                 'huggingface' => $http->withToken($key)->get('https://huggingface.co/api/whoami-v2'),
-                'cloudflare' => $http->withToken($key)->get($base.'/user/tokens/verify'),
+                'cloudflare' => str_contains($base, '/accounts/') && ! str_contains($base, 'YOUR_ACCOUNT_ID')
+                    ? $http->withToken($key)->get($base.'/ai/models/search', ['per_page' => 1])
+                    : $http->withToken($key)->get('https://api.cloudflare.com/client/v4/user/tokens/verify'),
                 'openai' => $http->withToken($key)->get($base.'/models'),
+                'stability' => $http->withToken($key)->get('https://api.stability.ai/v1/user/account'),
+                'replicate' => $http->withToken($key)->get('https://api.replicate.com/v1/account'),
+                'fal' => $http->withHeaders(['Authorization' => 'Key '.$key])->post('https://fal.run/fal-ai/flux/schnell', (object) []),
+                'luma' => $http->withToken($key)->get(($base ?: 'https://api.lumalabs.ai/dream-machine/v1').'/generations', ['limit' => 1]),
+                'runway' => $http->withToken($key)->withHeaders(['X-Runway-Version' => '2024-11-06'])->get(($base ?: 'https://api.dev.runwayml.com/v1').'/organization'),
                 default => $http->withToken($key)->get($base),
             };
         } catch (\Throwable $e) {
-            return ['ok' => false, 'ms' => (int) ((microtime(true) - $start) * 1000), 'message' => 'Could not reach '.$base];
+            return ['ok' => false, 'ms' => (int) ((microtime(true) - $start) * 1000), 'message' => 'Could not reach '.($base ?: $this->name)];
         }
 
         $ms = (int) ((microtime(true) - $start) * 1000);
@@ -71,8 +91,14 @@ class AiProvider extends Model
         if ($status === 429) {
             return ['ok' => false, 'ms' => $ms, 'message' => '429 · rate limited'];
         }
-        if ($status >= 500 || ($this->driver !== 'generic' && ! $res->successful())) {
+        if ($validationMeansOk && in_array($status, [400, 404, 422], true)) {
+            return ['ok' => true, 'ms' => $ms, 'message' => 'OK · key accepted · '.$ms.' ms'];
+        }
+        if (! $res->successful()) {
             return ['ok' => false, 'ms' => $ms, 'message' => 'HTTP '.$status];
+        }
+        if ($this->driver === 'cloudflare' && (! str_contains($base, '/accounts/') || str_contains($base, 'YOUR_ACCOUNT_ID'))) {
+            return ['ok' => false, 'ms' => $ms, 'message' => 'Token valid — now set Base URL to …/client/v4/accounts/<account id>'];
         }
 
         $count = is_array($res->json('data')) ? count($res->json('data')) : (is_array($res->json('models')) ? count($res->json('models')) : null);

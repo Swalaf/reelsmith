@@ -12,7 +12,7 @@ class Project extends Model
 
     protected $fillable = [
         'user_id', 'template_id', 'name', 'status', 'platform', 'ratio', 'duration', 'idea', 'script', 'scenes',
-        'captions', 'voice', 'providers_used', 'credits_used', 'render_started_at', 'render_seconds', 'output_path', 'error',
+        'captions', 'voice', 'providers_used', 'credits_used', 'render_started_at', 'render_seconds', 'render_progress', 'render_stage', 'music', 'output_path', 'error',
     ];
 
     protected function casts(): array
@@ -45,7 +45,9 @@ class Project extends Model
     /** Credits a render of this project costs: script + one per scene visual + voice per started minute. */
     public function renderCost(): int
     {
-        return 2 + count($this->scenes ?? []) + 6 * max(1, (int) ceil($this->totalSeconds() / 60));
+        $videoScenes = count(array_filter($this->scenes ?? [], fn ($s) => ($s['src'] ?? '') === 'AI Video' && empty($s['clip'])));
+
+        return 2 + count($this->scenes ?? []) + 7 * $videoScenes + 6 * max(1, (int) ceil($this->totalSeconds() / 60));
     }
 
     public function outputUrl(): ?string
@@ -72,9 +74,16 @@ class Project extends Model
             'url' => $this->outputUrl(),
             'idea' => $this->idea,
             'script' => $this->script,
-            'scenes' => $this->scenes,
+            'scenes' => array_map(fn ($s) => $s + [
+                'imgUrl' => ! empty($s['img']) ? Storage::disk('public')->url($s['img']) : null,
+                'clipUrl' => ! empty($s['clip']) ? Storage::disk('public')->url($s['clip']) : null,
+                'audioUrl' => ! empty($s['audio']) ? Storage::disk('public')->url($s['audio']) : null,
+            ], $this->scenes ?? []),
             'captions' => $this->captions,
             'voice' => $this->voice,
+            'music' => $this->music,
+            'progress' => $this->render_progress,
+            'stage' => $this->render_stage,
         ];
     }
 }

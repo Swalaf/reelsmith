@@ -3,71 +3,51 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
-use App\Models\AiProvider;
-use Illuminate\Support\Facades\Http;
 
 /**
  * Turns an idea into a script and a timed scene plan.
  *
- * Uses the highest-priority connected OpenAI-compatible text provider when one is
- * configured (OpenRouter, Groq, a self-hosted vLLM/Ollama, …). When none is available,
- * or the provider fails, it falls back to a deterministic local writer so the product
- * keeps working without any AI keys.
+ * Uses the connected Text providers (see AiGateway, with fallback between them). When
+ * none is connected, or all fail, a deterministic local writer keeps the product working
+ * without any AI keys.
  */
 class ScriptWriter
 {
+    public function __construct(private AiGateway $ai = new AiGateway) {}
+
     /** @return array{script: array, scenes: array, provider: string} */
     public function write(array $idea): array
     {
         $topic = trim($idea['topic'] ?? '') ?: 'Untitled video';
         $seconds = (int) filter_var($idea['dur'] ?? '30', FILTER_SANITIZE_NUMBER_INT) ?: 30;
 
-        foreach ($this->textProviders() as $provider) {
+        if ($this->ai->available('Text')) {
             try {
-                $out = $this->viaProvider($provider, $idea, $topic, $seconds);
-                if ($out) {
-                    $provider->increment('requests');
-
-                    return $out + ['provider' => $provider->name];
-                }
+                return $this->viaProvider($idea, $topic, $seconds);
             } catch (\Throwable $e) {
-                ActivityLog::record($provider->name.' script generation failed: '.$e->getMessage().' → fallback', 'ai', 'WARNING');
+                ActivityLog::record('Script generation failed: '.mb_substr($e->getMessage(), 0, 300).' → built-in writer', 'ai', 'WARNING');
             }
         }
 
         return $this->local($topic, $idea, $seconds) + ['provider' => 'Built-in writer'];
     }
 
-    private function textProviders()
+    private function viaProvider(array $idea, string $topic, int $seconds): array
     {
-        return AiProvider::where('category', 'Text')->where('status', 'connected')
-            ->where('driver', 'openai')->orderBy('priority')->get()
-            ->filter(fn ($p) => $p->api_key && $p->base_url);
-    }
-
-    private function viaProvider(AiProvider $p, array $idea, string $topic, int $seconds): ?array
-    {
-        $prompt = "Write a short-form video script for {$idea['platform']} ({$idea['ratio']}, about {$seconds} seconds, tone: {$idea['tone']}).\n"
-            ."Topic: {$topic}\n\n"
+        $extra = trim(implode("\n", array_filter([
+            ! empty($idea['description']) ? 'Details: '.$idea['description'] : null,
+            ! empty($idea['audience']) ? 'Audience: '.$idea['audience'] : null,
+            ! empty($idea['cta']) ? 'Call to action: '.$idea['cta'] : null,
+            ! empty($idea['language']) ? 'Language: '.$idea['language'] : null,
+        ])));
+        $prompt = 'Write a short-form video script for '.($idea['platform'] ?? 'TikTok').' ('.($idea['ratio'] ?? '9:16').", about {$seconds} seconds, tone: ".($idea['tone'] ?? 'Friendly').").\n"
+            ."Topic: {$topic}\n{$extra}\n\n"
             .'Reply with JSON only: {"title":string,"hook":string,"body":string,"cta":string,'
-            .'"scenes":[{"prompt":visual description,"narration":spoken line,"caption":max 4 words,"dur":seconds}]}. '
-            .'Use 4 to 6 scenes whose durations add up to about '.$seconds.' seconds.';
+            .'"scenes":[{"prompt":detailed visual description for an image generator (no text in image),"narration":spoken line,"caption":max 4 words,"dur":seconds}]}. '
+            .'Use 4 to 6 scenes whose durations add up to about '.$seconds.' seconds. The narration of all scenes read in order must equal hook + body + cta.';
 
-        $res = Http::timeout(45)->withToken((string) $p->api_key)->acceptJson()
-            ->post(rtrim($p->base_url, '/').'/chat/completions', [
-                'model' => $p->model,
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are a concise video scriptwriter. Output valid JSON only.'],
-                    ['role' => 'user', 'content' => $prompt],
-                ],
-                'temperature' => 0.7,
-            ]);
-
-        if (! $res->successful()) {
-            throw new \RuntimeException('HTTP '.$res->status());
-        }
-
-        $text = (string) $res->json('choices.0.message.content');
+        $out = $this->ai->text('You are a concise video scriptwriter. Output valid JSON only.', $prompt);
+        $text = $out['result'];
         if (preg_match('/\{.*\}/s', $text, $m)) {
             $text = $m[0];
         }
@@ -89,6 +69,7 @@ class ScriptWriter
                 'cta' => (string) ($data['cta'] ?? ''),
             ],
             'scenes' => $this->numbered($scenes),
+            'provider' => $out['provider'],
         ];
     }
 
