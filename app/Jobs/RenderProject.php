@@ -11,6 +11,7 @@ use App\Support\Ffmpeg;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -336,5 +337,24 @@ class RenderProject implements ShouldQueue
         $project->update(['status' => 'Completed', 'output_path' => $rel, 'error' => null, 'render_progress' => 100, 'render_stage' => "Done · {$w}×{$h}",
             'render_seconds' => (int) (microtime(true) - $started), 'providers_used' => mb_substr($providers, 0, 250)]);
         ActivityLog::record(sprintf('Render job for project #%d completed in %.1fs', $project->id, microtime(true) - $started), 'queue');
+        $this->notify($project);
+    }
+
+    /** "We'll email you when the video is ready." */
+    private function notify(Project $project): void
+    {
+        $user = $project->user;
+        if (! $user) {
+            return;
+        }
+        $app = Branding::appName();
+        $link = url('/studio?project='.$project->id);
+        try {
+            Mail::raw("Your video \"{$project->name}\" is ready.\n\nOpen it in the Studio to preview, download or edit:\n{$link}\n\n— {$app}", function ($m) use ($user, $project) {
+                $m->to($user->email, $user->name)->subject("Your video is ready: {$project->name}");
+            });
+        } catch (\Throwable $e) {
+            ActivityLog::record('Could not email '.$user->email.' about project #'.$project->id.': '.mb_substr($e->getMessage(), 0, 200), 'mail', 'WARNING');
+        }
     }
 }

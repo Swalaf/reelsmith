@@ -153,16 +153,18 @@ class Component extends DesignComponent {
   startRender() {
     const s = this.state;
     if (!s.projectId || s.rendering) return;
+    const back = { screen: s.screen, step: s.step };
+    this.setState({ renderP: 0, rendering: true, output: { ...(s.output || {}), status: 'Processing', stage: 'Starting…', url: null } });
+    this.go('render');
     (async () => {
       await this.save();
       try {
         const r = await rs.post('/studio/projects/' + s.projectId + '/render');
         this.upsert(r.project);
         if (r.user) window.RS.user = r.user;
-        this.setState({ output: r.project, renderP: 0, rendering: true });
-        this.go('render');
+        this.setState({ output: r.project });
         this.poll(s.projectId);
-      } catch (e) { alert(e.message); }
+      } catch (e) { this.setState({ rendering: false, step: back.step }); this.go(back.screen); alert(e.message); }
     })();
   }
 
@@ -237,6 +239,10 @@ class Component extends DesignComponent {
     v.out = { res: { '16:9': '1280×720', '1:1': '1080×1080', '4:5': '1080×1350' }[ratio] || '720×1280', size: o.status === 'Completed' ? (o.url ? 'MP4' : 'no file') : '—', credits: String(o.credits || 0) };
     v.download = () => { if (o.url) window.open(o.url, '_blank'); else alert(o.status === 'Completed' ? 'This render produced no file — FFmpeg is not installed on the server.' : 'The video is still rendering.'); };
     v.eta = o.status === 'Processing' ? (o.stage || 'Queued…') : v.eta;
+    const conn = cat => { const p = s.prov.find(q => q.cat === cat && q.status === 'connected'); return p ? p.name : null; };
+    const metas = [conn('Text') || 'Built-in writer', s.scenes.length + ' scenes', conn('Image') || 'Uploads / colour cards', conn('Voice') || 'No voice provider',
+      (s.cap.anim || 'Karaoke') + ' · ' + (s.cap.font || '').split(' ')[0], 'FFmpeg · H.264'];
+    v.stages = v.stages.map((st, i) => ({ ...st, meta: metas[i] }));
     const dims = /(\d+)×(\d+)/.exec(o.stage || '');
     if (dims) v.out.res = dims[1] + '×' + dims[2];
     const ar = (o.ratio || s.idea.ratio || '9:16').replace(':', '/');

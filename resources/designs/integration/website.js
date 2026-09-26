@@ -61,7 +61,8 @@ class Component extends DesignComponent {
       const cp = paid[Math.min(s.coPlan, paid.length - 1)];
       const sub = s.yearly ? cp.price * 12 : cp.price, disc = s.yearly ? sub * 0.2 : 0, total = sub - disc;
       v.coPlans = paid.map((x, i) => ({ name: x.name, d: x.credits.toLocaleString() + ' credits · ' + x.videos + ' videos', price: '$' + (s.yearly ? Math.round(x.price * 0.8) : x.price) + '/mo', bd: s.coPlan === i ? '#17181a' : '#e1e0dc', dot: s.coPlan === i ? '#17181a' : 'transparent', on: () => this.setState({ coPlan: i }) }));
-      v.co = { ...v.co, plan: cp.name, credits: cp.credits.toLocaleString(), sub: '$' + sub.toFixed(2), disc: '−$' + disc.toFixed(2), total: '$' + total.toFixed(2), payLabel: s.paying ? 'Processing…' : 'Pay $' + total.toFixed(2), declined: !!s.declined };
+      const pay = R.payments || {};
+      v.co = { ...v.co, card: v.co.card && !pay.stripe, plan: cp.name, credits: cp.credits.toLocaleString(), sub: '$' + sub.toFixed(2), disc: '−$' + disc.toFixed(2), total: '$' + total.toFixed(2), payLabel: s.paying ? 'Processing…' : 'Pay $' + total.toFixed(2), declined: !!s.declined };
       v.pay = async () => {
         if (s.paying) return;
         busy('paying', true);

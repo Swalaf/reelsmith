@@ -105,7 +105,7 @@ class AuthController extends Controller
         $user->forceFill(['verify_code' => hash('sha256', $user->id.'|'.$code).'|'.(time() + 3600)])->save();
         $app = Branding::appName();
         try {
-            Mail::raw("Your {$app} verification code is {$code}.\n\nIt expires in one hour. If you didn't create an account, ignore this email.", function ($m) use ($user, $app) {
+            Mail::raw("Your {$app} verification code is {$code}.\n\nIt expires in one hour. If you didn't create an account, ignore this email.", function ($m) use ($user, $app, $code) {
                 $m->to($user->email, $user->name)->subject("{$code} is your {$app} verification code");
             });
         } catch (\Throwable $e) {
