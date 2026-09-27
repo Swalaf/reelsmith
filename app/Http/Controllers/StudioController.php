@@ -15,6 +15,7 @@ use App\Services\ScriptWriter;
 use App\Support\Boot;
 use App\Support\Branding;
 use App\Support\DesignPage;
+use App\Support\Media;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -158,7 +159,7 @@ class StudioController extends Controller
     {
         $this->authorizeProject($request, $project);
         if ($project->output_path) {
-            Storage::disk('public')->delete($project->output_path);
+            Media::delete($project->output_path);
         }
         $project->delete();
 
@@ -268,7 +269,7 @@ class StudioController extends Controller
 
         return $uploads->merge($user->projects()->latest()->get(['id', 'scenes'])->flatMap(fn ($p) => collect($p->scenes ?? [])->pluck('img')->filter()))
             ->unique()->filter(fn ($rel) => $disk->exists($rel))->take(60)
-            ->map(fn ($rel) => ['path' => $rel, 'url' => $disk->url($rel)]);
+            ->map(fn ($rel) => ['path' => $rel, 'url' => Media::url($rel)]);
     }
 
     /** @return array{0:int,1:array} */

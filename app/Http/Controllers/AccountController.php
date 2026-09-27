@@ -14,6 +14,7 @@ use App\Models\SupportTicket;
 use App\Models\User;
 use App\Support\Boot;
 use App\Support\Branding;
+use App\Support\Media;
 use App\Support\Totp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -53,19 +54,19 @@ class AccountController extends Controller
         $disk = Storage::disk('public');
         $items = collect();
         foreach (MediaAsset::where('user_id', $user->id)->latest()->get() as $a) {
-            $items->push(['key' => 'u'.$a->id, 'id' => $a->id, 'kind' => $a->kind, 'name' => $a->name, 'url' => $disk->url($a->path), 'path' => $a->path,
+            $items->push(['key' => 'u'.$a->id, 'id' => $a->id, 'kind' => $a->kind, 'name' => $a->name, 'url' => Media::url($a->path), 'path' => $a->path,
                 'size' => static::bytes($a->size), 'date' => $a->created_at?->format('M j'), 'ts' => $a->created_at?->timestamp ?? 0, 'source' => 'Upload', 'deletable' => true]);
         }
         foreach ($user->projects()->latest()->get() as $p) {
             if ($p->output_path && $disk->exists($p->output_path)) {
-                $items->push(['key' => 'r'.$p->id, 'kind' => 'video', 'name' => $p->name.'.mp4', 'url' => $disk->url($p->output_path), 'path' => $p->output_path,
+                $items->push(['key' => 'r'.$p->id, 'kind' => 'video', 'name' => $p->name.'.mp4', 'url' => Media::url($p->output_path), 'path' => $p->output_path,
                     'size' => static::bytes($disk->size($p->output_path)), 'date' => $p->updated_at?->format('M j'), 'ts' => $p->updated_at?->timestamp ?? 0, 'source' => 'Render', 'deletable' => false]);
             }
             foreach ((array) $p->scenes as $i => $s) {
                 foreach (['img' => 'image', 'clip' => 'video', 'audio' => 'audio'] as $field => $kind) {
                     $rel = $s[$field] ?? null;
                     if ($rel && ! str_starts_with($rel, 'media/') && $disk->exists($rel)) {
-                        $items->push(['key' => $field.$p->id.'-'.($s['id'] ?? $i), 'kind' => $kind, 'name' => Str::limit($p->name, 28).' · scene '.($i + 1), 'url' => $disk->url($rel), 'path' => $rel,
+                        $items->push(['key' => $field.$p->id.'-'.($s['id'] ?? $i), 'kind' => $kind, 'name' => Str::limit($p->name, 28).' · scene '.($i + 1), 'url' => Media::url($rel), 'path' => $rel,
                             'size' => static::bytes($disk->size($rel)), 'date' => $p->updated_at?->format('M j'), 'ts' => $p->updated_at?->timestamp ?? 0, 'source' => $kind === 'audio' ? 'Voiceover' : 'AI', 'deletable' => false]);
                     }
                 }
@@ -86,6 +87,7 @@ class AccountController extends Controller
         abort_if(static::storageBytes($user) + $f->getSize() > $quota, 422, 'Storage full — delete some media or upgrade your plan.');
         $path = $f->storeAs('media/'.$user->id, Str::random(12).'.'.($f->guessExtension() ?: $f->getClientOriginalExtension() ?: 'bin'), 'public');
         MediaAsset::create(['user_id' => $user->id, 'name' => Str::limit($f->getClientOriginalName() ?: 'upload', 120, ''), 'path' => $path, 'kind' => $kind, 'size' => $f->getSize()]);
+        Media::publish($path);
 
         return ['media' => static::mediaItems($user)];
     }
@@ -93,7 +95,7 @@ class AccountController extends Controller
     public function deleteMedia(Request $request, MediaAsset $asset)
     {
         abort_unless($asset->user_id === $request->user()->id, 404);
-        Storage::disk('public')->delete($asset->path);
+        Media::delete($asset->path);
         $asset->delete();
 
         return ['media' => static::mediaItems($request->user())];
@@ -272,7 +274,7 @@ class AccountController extends Controller
         }
         abort_if($user->isAdmin() && User::where('role', 'admin')->count() <= 1, 422, 'You are the only administrator. Make someone else an admin first.');
         foreach (MediaAsset::where('user_id', $user->id)->pluck('path') as $p) {
-            Storage::disk('public')->delete($p);
+            Media::delete($p);
         }
         ActivityLog::record('Account deleted: '.$user->email, 'auth', 'WARNING');
         Auth::logout();

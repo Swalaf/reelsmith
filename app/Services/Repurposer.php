@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Project;
 use App\Models\WorkflowRun;
 use App\Support\Ffmpeg;
+use App\Support\Media;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -56,10 +57,11 @@ class Repurposer
             $run->update(['steps' => $steps]);
             $t = microtime(true);
             try {
-                if (! $project || ! $project->output_path || ! $disk->exists($project->output_path)) {
+                $source = $project?->output_path ? Media::local($project->output_path) : null;
+                if (! $source) {
                     throw new \RuntimeException('the source video file is missing — render it first');
                 }
-                [$meta, $files] = $this->output($step['key'], $project, $disk->path($project->output_path), $dir);
+                [$meta, $files] = $this->output($step['key'], $project, $source, $dir);
                 $output[$step['key']] = $files;
                 $steps[$i] = array_merge($steps[$i], ['status' => 'done', 'meta' => $meta, 'dur' => round(microtime(true) - $t, 1).'s', 'files' => $files]);
             } catch (\Throwable $e) {
@@ -78,7 +80,7 @@ class Repurposer
     private function output(string $key, Project $p, string $src, string $dir): array
     {
         $disk = Storage::disk('public');
-        $url = fn (string $rel) => $disk->url($rel);
+        $url = fn (string $rel) => Media::publish($rel);
 
         switch ($key) {
             case 'yt':

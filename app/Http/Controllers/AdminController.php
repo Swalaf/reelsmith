@@ -17,6 +17,7 @@ use App\Support\Branding;
 use App\Support\DesignPage;
 use App\Support\Ffmpeg;
 use App\Support\Installer;
+use App\Support\Media;
 use Database\Seeders\CatalogSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -81,7 +82,7 @@ class AdminController extends Controller
                     ['Render queue', $projects->where('status', 'Processing')->count().' active', 'ok'],
                     ['FFmpeg', $ffVersion ?: 'not installed', $ffVersion ? 'ok' : 'warn'],
                     ['Cron', $cron['cron'], $cron['cronOk'] ? 'ok' : 'warn'],
-                    ['Storage · '.config('filesystems.default'), is_writable(storage_path('app')) ? 'healthy' : 'not writable', is_writable(storage_path('app')) ? 'ok' : 'err'],
+                    ['Storage · '.(Media::enabled() ? 'cloud + local' : 'local'), is_writable(storage_path('app')) ? 'healthy' : 'not writable', is_writable(storage_path('app')) ? 'ok' : 'err'],
                     ...$providers->whereIn('status', ['rate', 'error'])->map(fn ($p) => [$p->name, $p->last_test ?: $p->status, $p->status === 'rate' ? 'warn' : 'err'])->values()->all(),
                 ])),
                 'creditKpis' => [
@@ -92,7 +93,7 @@ class AdminController extends Controller
                 ],
                 'adjustments' => CreditTransaction::with('user')->where('reason', 'not like', 'Render project%')->latest()->limit(6)->get()->map(fn ($t) => [$t->user?->name ?? '—', $t->reason, ($t->amount >= 0 ? '+' : '−').number_format(abs($t->amount))])->values(),
                 'health' => [
-                    'set_storage_connection' => [is_writable(storage_path('app')) ? 'Writable · '.Installer::freeSpace().' free' : 'Not writable', is_writable(storage_path('app'))],
+                    'set_storage_connection' => $screen === 'settings' ? Media::health() : (Media::enabled() ? ['Cloud storage configured', true] : [is_writable(storage_path('app')) ? 'Local disk · '.Installer::freeSpace().' free' : 'Not writable', is_writable(storage_path('app'))]),
                     'set_queue_workers_workers' => [$cron['queue'], $cron['queueOk']],
                     'set_queue_workers_failed_jobs_24h_' => [($f = $this->failedJobs()).' failed', $f === 0],
                     'set_cron_last_run' => [$cron['cron'], $cron['cronOk']],
@@ -118,7 +119,7 @@ class AdminController extends Controller
     {
         abort_if($user->id === $request->user()->id, 422, "You can't delete your own account here.");
         foreach ($user->projects()->whereNotNull('output_path')->pluck('output_path') as $p) {
-            Storage::disk('public')->delete($p);
+            Media::delete($p);
         }
         ActivityLog::record('User '.$user->email.' deleted by '.$request->user()->name, 'auth', 'WARNING');
         $user->delete();
@@ -153,7 +154,7 @@ class AdminController extends Controller
     public function deleteProject(Project $project)
     {
         if ($project->output_path) {
-            Storage::disk('public')->delete($project->output_path);
+            Media::delete($project->output_path);
         }
         $project->delete();
 

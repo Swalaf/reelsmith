@@ -9,6 +9,7 @@ use App\Services\SceneMedia;
 use App\Services\Webhooks;
 use App\Support\Branding;
 use App\Support\Ffmpeg;
+use App\Support\Media;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\File;
@@ -133,8 +134,9 @@ class RenderProject implements ShouldQueue
             }
 
             if ($project->output_path && $project->output_path !== $rel) {
-                $disk->delete($project->output_path);
+                Media::delete($project->output_path);
             }
+            Media::publish($rel);
             $this->finish($project, $rel, $started, $used);
         } catch (\Throwable $e) {
             $project->update(['status' => 'Failed', 'error' => mb_substr($e->getMessage(), 0, 250), 'render_stage' => 'Failed']);

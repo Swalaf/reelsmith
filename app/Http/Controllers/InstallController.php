@@ -132,7 +132,7 @@ class InstallController extends Controller
         $storage = $data['storage'] ?? [];
         if (($storage['driver'] ?? 'Local disk') !== 'Local disk') {
             $env += ['AWS_ACCESS_KEY_ID' => $storage['key'] ?? '', 'AWS_SECRET_ACCESS_KEY' => $storage['secret'] ?? '', 'AWS_DEFAULT_REGION' => $storage['region'] ?? 'auto',
-                'AWS_BUCKET' => $storage['bucket'] ?? '', 'AWS_ENDPOINT' => $storage['endpoint'] ?? '', 'AWS_URL' => $storage['url'] ?? '', 'AWS_USE_PATH_STYLE_ENDPOINT' => 'true'];
+                'AWS_BUCKET' => $storage['bucket'] ?? '', 'AWS_ENDPOINT' => $storage['endpoint'] ?? '', 'AWS_URL' => $storage['url'] ?? '', 'AWS_USE_PATH_STYLE_ENDPOINT' => 'true', 'MEDIA_DISK' => 's3'];
         }
         Installer::writeEnv($env);
 

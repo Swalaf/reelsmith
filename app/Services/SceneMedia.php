@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use App\Models\Project;
+use App\Support\Media;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -128,7 +129,7 @@ class SceneMedia
             ActivityLog::record("Voice preview created for {$voice}", 'ai');
         }
 
-        return $disk->url($rel);
+        return Media::url($rel);
     }
 
     private function forget(?string $rel): void

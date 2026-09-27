@@ -21,6 +21,7 @@ use App\Services\Webhooks;
 use App\Services\WorkflowRunner;
 use App\Support\Branding;
 use App\Support\DesignPage;
+use App\Support\Media;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -99,7 +100,7 @@ class PlatformController extends Controller
         return [
             'workflows' => Workflow::where('user_id', $user->id)->latest('updated_at')->get()->map(fn ($w) => $this->wf($w))->values(),
             'runs' => $runs->map(fn ($r) => $this->run($r))->values(),
-            'characters' => Character::where('user_id', $user->id)->orderBy('id')->get()->map(fn ($c) => $c->only(['id', 'name', 'description', 'look', 'costume', 'personality', 'voice']) + ['image' => $c->image ? Storage::disk('public')->url($c->image) : null])->values(),
+            'characters' => Character::where('user_id', $user->id)->orderBy('id')->get()->map(fn ($c) => $c->only(['id', 'name', 'description', 'look', 'costume', 'personality', 'voice']) + ['image' => $c->image ? Media::url($c->image) : null])->values(),
             'production' => $this->prod(Production::where('user_id', $user->id)->latest('id')->first()),
             'agents' => Agent::where('user_id', $user->id)->orderBy('id')->get()->map(fn ($a) => $a->only(['id', 'name', 'icon', 'description', 'model', 'tools', 'perms', 'system', 'format']))->values(),
             'webhooks' => Webhook::where('user_id', $user->id)->latest()->get()->map(fn ($h) => ['id' => $h->id, 'url' => $h->url, 'events' => $h->events, 'deliveries' => $h->deliveries, 'rate' => $h->deliveries ? round($h->successes / $h->deliveries * 100, 1).'%' : '—', 'active' => $h->active, 'secret' => $h->secret])->values(),
@@ -345,11 +346,11 @@ class PlatformController extends Controller
         }
         $user->adjustCredits(-1, 'Character reference · '.$character->name);
         if ($character->image) {
-            Storage::disk('public')->delete($character->image);
+            Media::delete($character->image);
         }
         $character->update(['image' => $rel]);
 
-        return ['url' => Storage::disk('public')->url($rel)];
+        return ['url' => Media::url($rel)];
     }
 
     public function deleteCharacter(Request $request, Character $character)
@@ -384,7 +385,7 @@ class PlatformController extends Controller
 
         return ['id' => $p->id, 'title' => $p->title, 'logline' => $p->logline, 'style' => $p->style, 'settings' => $p->settings, 'toggles' => $p->toggles, 'scenes' => $p->scenes,
             'screenplay' => $p->screenplay, 'project' => $p->project_id ? Project::find($p->project_id)?->toClient() : null,
-            'shots' => array_map(fn ($s) => $s + ['imgUrl' => ! empty($s['img']) ? $disk->url($s['img']) : null], (array) $p->shots)];
+            'shots' => array_map(fn ($s) => $s + ['imgUrl' => ! empty($s['img']) ? Media::url($s['img']) : null], (array) $p->shots)];
     }
 
     public function saveProduction(Request $request)
@@ -424,7 +425,7 @@ class PlatformController extends Controller
         }
         $user->adjustCredits(-1, 'Cinematic shot · '.$p->title);
         if (! empty($s['img'])) {
-            Storage::disk('public')->delete($s['img']);
+            Media::delete($s['img']);
         }
         $shots[$i] = array_merge($s, ['img' => $rel, 'st' => 'done', 'p' => 100]);
         $p->update(['shots' => $shots]);

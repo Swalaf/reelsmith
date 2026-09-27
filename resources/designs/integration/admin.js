@@ -171,6 +171,7 @@ class Component extends DesignComponent {
     const txt = (label, hint, secret) => ({ label, hint, isText: true, v: '', ff: "'Geist Mono',monospace", inputType: secret ? 'password' : 'text' });
     const extra = {
       'Email (SMTP)': [txt('SMTP username', ''), txt('SMTP password', 'Stored encrypted', true)],
+      'Storage': [txt('Secret key', 'Stored encrypted', true), txt('Region', 'auto (R2), us-east-1, eu-central-003…'), txt('Public URL', 'Optional CDN or public bucket URL, e.g. https://media.example.com')],
       'Payments': [txt('Stripe secret key', 'sk_live_… · stored encrypted', true), txt('Stripe webhook secret', 'whsec_… · endpoint: ' + location.origin + '/webhooks/stripe', true),
         txt('PayPal client ID', ''), txt('PayPal secret', 'Stored encrypted', true), { label: 'PayPal mode', hint: '', isSelect: true, v: 'Live', options: ['Live', 'Sandbox'] },
         txt('Razorpay key ID', 'rzp_live_…'), txt('Razorpay key secret', 'Stored encrypted', true), txt('Razorpay webhook secret', 'Event payment_link.paid · endpoint: ' + location.origin + '/webhooks/razorpay', true),

@@ -22,3 +22,6 @@ Schedule::call(function () {
         $wf->update(['next_run_at' => $platform->nextRun($wf)]);
     }
 })->everyMinute()->name('reelsmith-scheduled-workflows')->withoutOverlapping();
+
+// Copy new renders and media to cloud storage when it's configured (no-op otherwise).
+Schedule::command('reelsmith:storage-sync')->everyFiveMinutes()->withoutOverlapping()->runInBackground();

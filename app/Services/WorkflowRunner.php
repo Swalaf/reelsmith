@@ -8,6 +8,7 @@ use App\Models\Agent;
 use App\Models\Character;
 use App\Models\Project;
 use App\Models\WorkflowRun;
+use App\Support\Media;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -148,7 +149,7 @@ class WorkflowRunner
                 for ($k = 0; $k < $count; $k++) {
                     $rel = $dir.'/image-'.$n['id'].'-'.$k.'.png';
                     $provider = $this->ai->image($prompt.($count > 1 ? ' (variation '.($k + 1).')' : ''), $c('Aspect ratio', '9:16'), $disk->path($rel));
-                    $urls[] = $disk->url($rel);
+                    $urls[] = Media::publish($rel);
                     $paths[] = $rel;
                 }
                 $this->ctx['images'] = array_merge($this->ctx['images'] ?? [], $urls);
@@ -162,7 +163,7 @@ class WorkflowRunner
                 $rel = $dir.'/clip-'.$n['id'].'.mp4';
                 $first = $this->ctx['_images'][0] ?? null;
                 $provider = $this->ai->video($c('Prompt', '{input.topic}'), $c('Aspect ratio', '9:16'), (int) $c('Duration', '5'), $first ? $disk->path($first) : null, $disk->path($rel));
-                $this->ctx['video'] = $disk->url($rel);
+                $this->ctx['video'] = Media::publish($rel);
 
                 return [$provider.' · clip', self::COST['aivideo']];
 
@@ -172,7 +173,7 @@ class WorkflowRunner
                 $rel = $dir.'/audio-'.$n['id'].'.mp3';
                 $voice = explode(' ', trim($c('Voice', 'Theo')))[0] ?: 'Theo';
                 $provider = $this->ai->speech(mb_substr($c('Text', '{copy}'), 0, 4000), $voice, $disk->path($rel));
-                $this->ctx['audio'] = $disk->url($rel);
+                $this->ctx['audio'] = Media::publish($rel);
 
                 return [$provider.' · '.$voice, self::COST['voice']];
 
@@ -204,7 +205,7 @@ class WorkflowRunner
                 $disk->makeDirectory($dir);
                 $rel = $dir.'/'.(Str::slug(pathinfo($cfg['Filename'] ?? 'output', PATHINFO_FILENAME)) ?: 'output').'.json';
                 $disk->put($rel, json_encode($this->publicCtx(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-                $this->ctx['file'] = $disk->url($rel);
+                $this->ctx['file'] = Media::publish($rel);
 
                 return ['saved '.basename($rel), 0];
 

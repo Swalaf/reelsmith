@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Support\Media;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class Project extends Model
 {
@@ -52,7 +52,7 @@ class Project extends Model
 
     public function outputUrl(): ?string
     {
-        return $this->output_path ? Storage::disk('public')->url($this->output_path) : null;
+        return $this->output_path ? Media::url($this->output_path) : null;
     }
 
     public function toClient(): array
@@ -75,14 +75,14 @@ class Project extends Model
             'idea' => $this->idea,
             'script' => $this->script,
             'scenes' => array_map(fn ($s) => $s + [
-                'imgUrl' => ! empty($s['img']) ? Storage::disk('public')->url($s['img']) : null,
-                'clipUrl' => ! empty($s['clip']) ? Storage::disk('public')->url($s['clip']) : null,
-                'audioUrl' => ! empty($s['audio']) ? Storage::disk('public')->url($s['audio']) : null,
+                'imgUrl' => ! empty($s['img']) ? Media::url($s['img']) : null,
+                'clipUrl' => ! empty($s['clip']) ? Media::url($s['clip']) : null,
+                'audioUrl' => ! empty($s['audio']) ? Media::url($s['audio']) : null,
             ], $this->scenes ?? []),
             'captions' => $this->captions,
             'voice' => $this->voice,
             'music' => $this->music,
-            'thumb' => ($first = collect($this->scenes ?? [])->firstWhere('img')) ? Storage::disk('public')->url($first['img']) : null,
+            'thumb' => ($first = collect($this->scenes ?? [])->firstWhere('img')) ? Media::url($first['img']) : null,
             'progress' => $this->render_progress,
             'stage' => $this->render_stage,
         ];
