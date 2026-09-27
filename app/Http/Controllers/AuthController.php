@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Support\Boot;
 use App\Support\Branding;
+use App\Support\Totp;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,10 +36,74 @@ class AuthController extends Controller
             return response()->json(['message' => 'Account suspended.', 'suspended' => true], 403);
         }
 
+        if ($user->hasTwoFactor() && ! $this->trusted($request, $user)) {
+            // Password was right; hold the login until the authenticator code checks out.
+            Auth::logout();
+            $request->session()->regenerate();
+            $request->session()->put('2fa.login', ['id' => $user->id, 'remember' => $request->boolean('remember'), 'at' => time()]);
+
+            return ['twoFactor' => true, 'csrf' => csrf_token()];
+        }
+
         $request->session()->regenerate();
+        $request->session()->put('2fa.passed', true);
         ActivityLog::record(($user->isAdmin() ? 'Admin' : 'User').' login: '.$user->email.' from '.$request->ip(), 'auth');
 
         return ['user' => Boot::me($user), 'csrf' => csrf_token()];
+    }
+
+    /** Second step of a login for accounts with two-factor authentication. */
+    public function twoFactor(Request $request)
+    {
+        $request->validate(['code' => 'nullable|string|max:12', 'recovery_code' => 'nullable|string|max:40', 'trust' => 'nullable|boolean']);
+        $pending = $request->session()->get('2fa.login');
+        if (! $pending || $pending['at'] < time() - 600 || ! ($user = User::find($pending['id'])) || ! $user->hasTwoFactor()) {
+            $request->session()->forget('2fa.login');
+
+            return response()->json(['message' => 'Your sign-in expired. Log in again.', 'restart' => true], 422);
+        }
+
+        $ok = false;
+        if ($recovery = strtolower(trim((string) $request->input('recovery_code')))) {
+            $codes = (array) $user->two_factor_recovery_codes;
+            $i = array_search(hash('sha256', $recovery), $codes, true);
+            if ($i !== false) {
+                unset($codes[$i]);
+                $user->forceFill(['two_factor_recovery_codes' => array_values($codes)])->save();
+                ActivityLog::record($user->email.' signed in with a recovery code ('.count($codes).' left)', 'auth', 'WARNING');
+                $ok = true;
+            }
+        } else {
+            $ok = Totp::verify((string) $user->two_factor_secret, (string) $request->input('code'));
+        }
+        if (! $ok) {
+            ActivityLog::record('Wrong two-factor code for '.$user->email.' from '.$request->ip(), 'auth', 'WARNING');
+            throw ValidationException::withMessages(['code' => $recovery ? 'That recovery code is not valid.' : 'That code is not right. Try the newest one from your app.']);
+        }
+
+        $request->session()->forget('2fa.login');
+        Auth::login($user, (bool) $pending['remember']);
+        $request->session()->regenerate();
+        $request->session()->put('2fa.passed', true);
+        if ($request->boolean('trust')) {
+            cookie()->queue(cookie('rs_2fa_trust', $user->id.'|'.(time() + 30 * 86400).'|'.$this->trustSig($user, time() + 30 * 86400), 30 * 24 * 60));
+        }
+        ActivityLog::record(($user->isAdmin() ? 'Admin' : 'User').' login (2FA): '.$user->email.' from '.$request->ip(), 'auth');
+
+        return ['user' => Boot::me($user), 'csrf' => csrf_token()];
+    }
+
+    private function trusted(Request $request, User $user): bool
+    {
+        [$id, $exp, $sig] = array_pad(explode('|', (string) $request->cookie('rs_2fa_trust')), 3, '');
+
+        return (int) $id === $user->id && (int) $exp > time() && hash_equals($this->trustSig($user, (int) $exp), $sig);
+    }
+
+    /** Tied to the secret, so turning 2FA off and on again (or a new secret) forgets trusted devices. */
+    private function trustSig(User $user, int $exp): string
+    {
+        return hash_hmac('sha256', $user->id.'|'.$exp.'|'.$user->two_factor_secret, (string) config('app.key'));
     }
 
     public function register(Request $request)
@@ -97,6 +162,11 @@ class AuthController extends Controller
         }
 
         return ['ok' => true];
+    }
+
+    public function sendVerification(User $user): void
+    {
+        $this->sendCode($user);
     }
 
     private function sendCode(User $user): void

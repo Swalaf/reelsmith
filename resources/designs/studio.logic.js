@@ -106,10 +106,10 @@ class DesignComponent extends DCLogic {
       {title:'Assets',items:[nav('media','Media Library','images'),nav('brand','Brand Kit','palette')]},
       {title:'Configure',items:[nav('providers','AI Providers','plug'),nav('credits','Credits','coins'),nav('usage','Usage','chart-column'),nav('api','API','code'),nav('settings','Settings','settings'),nav('support','Support','life-buoy')]}
     ];
-    const titles = {dashboard:'Dashboard',create:'Create Video',editor:'Video Editor',render:'Render',library:'My Videos',projects:'My Projects',templates:'Templates',brand:'Brand Kit',providers:'AI Providers'};
-    const g = {}; ['dashboard','create','library','templates','providers','editor','brand'].forEach(k=>g[k]=()=>this.go(k));
+    const titles = {media:'Media Library',credits:'Credits',usage:'Usage',api:'API',settings:'Settings',support:'Support',dashboard:'Dashboard',create:'Create Video',editor:'Video Editor',render:'Render',library:'My Videos',projects:'My Projects',templates:'Templates',brand:'Brand Kit',providers:'AI Providers'};
+    const g = {}; ['dashboard','create','library','templates','providers','editor','brand','media','credits','usage','api','settings','support'].forEach(k=>g[k]=()=>this.go(k));
     g.create = () => { this.setState({step:0}); this.go('create'); };
-    const scrKnown = ['dashboard','create','render','editor','library','templates','brand','providers'];
+    const scrKnown = ['dashboard','create','render','editor','library','templates','brand','providers','media','credits','usage','api','settings','support'];
     const cur = scrKnown.includes(scr) ? scr : 'dashboard';
     const sFlags = {}; scrKnown.forEach(k=>sFlags[k]=cur===k);
 

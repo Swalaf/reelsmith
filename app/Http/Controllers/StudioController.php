@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\RenderProject;
 use App\Models\ActivityLog;
 use App\Models\AiProvider;
+use App\Models\MediaAsset;
 use App\Models\Project;
 use App\Models\Template;
 use App\Models\User;
@@ -19,10 +20,17 @@ use Illuminate\Support\Facades\Storage;
 
 class StudioController extends Controller
 {
-    private const SCREENS = ['dashboard', 'create', 'editor', 'render', 'library', 'projects', 'templates', 'brand', 'providers'];
+    private const SCREENS = ['dashboard', 'create', 'editor', 'render', 'library', 'projects', 'templates', 'brand', 'providers', 'media', 'credits', 'usage', 'api', 'settings', 'support'];
 
     public function show(Request $request, ?string $screen = null)
     {
+        // /studio/media and /studio/account are both a screen (HTML) and a JSON endpoint.
+        if ($request->expectsJson() && $screen === 'media') {
+            return $this->media($request);
+        }
+        if ($request->expectsJson() && $screen === 'account') {
+            return app(AccountController::class)->state($request);
+        }
         $user = $request->user();
         $project = $request->query('project') ? $user->projects()->find($request->query('project')) : null;
 
@@ -38,6 +46,8 @@ class StudioController extends Controller
             'templates' => Template::where('status', 'Published')->orderBy('id')->get()->map->toClient()->values(),
             'providers' => AiProvider::orderBy('priority')->get()->map->toClient()->values(),
             'brand' => $user->brandKit(),
+            'account' => AccountController::data($user),
+            'setup2fa' => $request->boolean('setup2fa'),
             'stats' => ['since' => $user->created_at?->format('M Y'), 'storageMb' => round($bytes / 1024 / 1024, 1), 'storageGb' => $user->plan?->storage_gb ?? 1],
         ]);
     }
@@ -254,7 +264,9 @@ class StudioController extends Controller
     {
         $disk = Storage::disk('public');
 
-        return $user->projects()->latest()->get(['id', 'scenes'])->flatMap(fn ($p) => collect($p->scenes ?? [])->pluck('img')->filter())
+        $uploads = MediaAsset::where('user_id', $user->id)->where('kind', 'image')->latest()->pluck('path');
+
+        return $uploads->merge($user->projects()->latest()->get(['id', 'scenes'])->flatMap(fn ($p) => collect($p->scenes ?? [])->pluck('img')->filter()))
             ->unique()->filter(fn ($rel) => $disk->exists($rel))->take(60)
             ->map(fn ($rel) => ['path' => $rel, 'url' => $disk->url($rel)]);
     }

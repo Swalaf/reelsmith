@@ -347,7 +347,7 @@ class RenderProject implements ShouldQueue
     private function notify(Project $project): void
     {
         $user = $project->user;
-        if (! $user) {
+        if (! $user || ! $user->pref('renderDone')) {
             return;
         }
         $app = Branding::appName();

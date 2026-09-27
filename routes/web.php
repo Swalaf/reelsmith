@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InstallController;
@@ -36,6 +37,7 @@ Route::get('/two-factor', $site('twofa'));
 
 Route::middleware('throttle:20,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/two-factor', [AuthController::class, 'twoFactor']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/forgot-password', [AuthController::class, 'forgot']);
     Route::post('/reset-password', [AuthController::class, 'reset']);
@@ -92,6 +94,22 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/media', [StudioController::class, 'media']);
         Route::post('/voices/preview', [StudioController::class, 'voicePreview'])->middleware('throttle:20,1');
         Route::put('/brand', [StudioController::class, 'brand']);
+        Route::get('/account', [AccountController::class, 'state']);
+        Route::post('/media', [AccountController::class, 'upload']);
+        Route::delete('/media/{asset}', [AccountController::class, 'deleteMedia']);
+        Route::post('/api-keys', [AccountController::class, 'createKey']);
+        Route::delete('/api-keys/{key}', [AccountController::class, 'revokeKey']);
+        Route::put('/account/profile', [AccountController::class, 'profile']);
+        Route::put('/account/password', [AccountController::class, 'password'])->middleware('throttle:10,1');
+        Route::put('/account/prefs', [AccountController::class, 'prefs']);
+        Route::delete('/account', [AccountController::class, 'destroy'])->middleware('throttle:5,1');
+        Route::post('/account/2fa/setup', [AccountController::class, 'twoFactorSetup']);
+        Route::post('/account/2fa/confirm', [AccountController::class, 'twoFactorConfirm'])->middleware('throttle:10,1');
+        Route::post('/account/2fa/recovery', [AccountController::class, 'twoFactorRecovery'])->middleware('throttle:5,1');
+        Route::delete('/account/2fa', [AccountController::class, 'twoFactorDisable'])->middleware('throttle:5,1');
+        Route::post('/tickets', [AccountController::class, 'openTicket'])->middleware('throttle:10,1');
+        Route::post('/tickets/{ticket}/reply', [AccountController::class, 'replyTicket'])->middleware('throttle:20,1');
+        Route::post('/tickets/{ticket}/close', [AccountController::class, 'closeTicket']);
         Route::post('/providers/{provider:slug}/test', [StudioController::class, 'testProvider'])->middleware('throttle:30,1');
     });
 

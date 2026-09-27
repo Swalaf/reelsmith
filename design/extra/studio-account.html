@@ -1,0 +1,229 @@
+<!-- MEDIA LIBRARY (added by design/import.py from design/extra/studio-account.html) -->
+<sc-if value="{{ s.media }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Media Library</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Uploads, AI images and clips, voiceovers and finished renders. Use any image in a scene from the editor.</p></div>
+    <button onClick="{{ mUpload }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer"><i class="icon-upload" style="font-size:15px"></i>{{ mUploadLabel }}</button>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <div style="display:flex;padding:3px;border-radius:10px;background:#ebeae6;gap:2px;overflow-x:auto;max-width:100%"><sc-for list="{{ mTabs }}" as="c" hint-placeholder-count="4"><button onClick="{{ c.on }}" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap">{{ c.label }}<span style="font-family:'Geist Mono',monospace;font-size:11px;color:#8a8c91">{{ c.count }}</span></button></sc-for></div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:#6b6d72"><span>Storage</span><div style="width:140px;height:6px;border-radius:6px;background:#ebeae6;overflow:hidden"><div style="width:{{ mStoragePct }};height:100%;background:#17181a"></div></div><span style="font-family:'Geist Mono',monospace;font-size:12px">{{ mStorage }}</span></div>
+  </div>
+  <sc-if value="{{ mEmpty }}">
+    <div style="border:1.5px dashed #d6d4ce;border-radius:16px;padding:56px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+      <div style="width:48px;height:48px;border-radius:14px;background:#fff;border:1px solid #e8e7e3;display:grid;place-items:center"><i class="icon-images" style="font-size:20px"></i></div>
+      <span style="font-weight:600;font-size:16px">Nothing here yet</span><span style="color:#6b6d72;font-size:13.5px">Upload images, clips or audio, or generate visuals for a video's scenes.</span>
+    </div>
+  </sc-if>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px">
+    <sc-for list="{{ mItems }}" as="m" hint-placeholder-count="8">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden;display:flex;flex-direction:column">
+        <div onClick="{{ m.open }}" title="Open" style="position:relative;aspect-ratio:4/3;background:{{ m.bg }};cursor:pointer;display:grid;place-items:center;color:#fff">
+          <sc-if value="{{ m.isVideo }}"><span style="width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.45);display:grid;place-items:center"><i class="icon-play" style="font-size:17px"></i></span></sc-if>
+          <sc-if value="{{ m.isAudio }}"><i class="icon-audio-lines" style="font-size:30px;opacity:.85"></i></sc-if>
+          <span style="position:absolute;left:8px;top:8px;padding:2px 7px;border-radius:6px;background:rgba(0,0,0,.55);font-size:11px;font-family:'Geist Mono',monospace">{{ m.source }}</span>
+        </div>
+        <div style="padding:10px 12px;display:flex;align-items:center;gap:8px">
+          <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1"><span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.name }}</span><span style="font-size:11.5px;color:#8a8c91;font-family:'Geist Mono',monospace">{{ m.size }} · {{ m.date }}</span></div>
+          <sc-if value="{{ m.canDel }}"><button onClick="{{ m.del }}" title="Delete" style="width:30px;height:30px;border-radius:8px;border:1px solid #e1e0dc;background:#fff;display:grid;place-items:center;cursor:pointer;flex:none"><i class="icon-trash-2" style="font-size:14px"></i></button></sc-if>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- CREDITS -->
+<sc-if value="{{ s.credits }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Credits &amp; billing</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Credits pay for AI generation and rendering. Your plan tops them up each billing cycle.</p></div>
+    <button onClick="{{ crBuy }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer"><i class="icon-zap" style="font-size:15px"></i>Get more credits</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+    <sc-for list="{{ crKpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#6b6d72">{{ k.label }}</span><span style="font-size:24px;font-weight:600;letter-spacing:-0.02em;font-family:'Geist Mono',monospace">{{ k.v }}</span><span style="font-size:12px;color:#8a8c91">{{ k.sub }}</span></div></sc-for>
+  </div>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px">
+    <span style="font-weight:600;font-size:15px">Plans</span>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+      <sc-for list="{{ crPlans }}" as="p" hint-placeholder-count="4"><div style="border:1.5px solid {{ p.bd }};border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600">{{ p.name }}</span><sc-if value="{{ p.popular }}"><span style="font-size:11px;padding:2px 7px;border-radius:6px;background:oklch(0.95 0.04 35);color:oklch(0.5 0.17 35)">Popular</span></sc-if></div>
+        <span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">{{ p.priceLabel }}<span style="font-size:13px;color:#8a8c91;font-weight:400">{{ p.per }}</span></span>
+        <span style="font-size:13px;color:#6b6d72">{{ p.credits }} credits / month</span>
+        <button onClick="{{ p.on }}" style="margin-top:4px;height:36px;border-radius:9px;border:{{ p.btnBd }};background:{{ p.btnBg }};color:{{ p.btnFg }};font:inherit;font-size:13px;font-weight:500;cursor:{{ p.cursor }}">{{ p.btn }}</button>
+      </div></sc-for>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px;align-items:start">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid #efeeea;font-weight:600;font-size:15px">Credit history</div>
+      <sc-if value="{{ crHistEmpty }}"><div style="padding:28px 20px;color:#8a8c91;font-size:13.5px;text-align:center">No credit activity yet.</div></sc-if>
+      <div style="max-height:420px;overflow-y:auto">
+        <sc-for list="{{ crHist }}" as="h" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid #f3f2ef"><div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0"><span style="font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.reason }}</span><span style="font-size:11.5px;color:#8a8c91">{{ h.date }}</span></div><span style="font-family:'Geist Mono',monospace;font-size:13px;color:{{ h.fg }}">{{ h.amount }}</span></div></sc-for>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid #efeeea;font-weight:600;font-size:15px">Payments &amp; invoices</div>
+      <sc-if value="{{ crPaysEmpty }}"><div style="padding:28px 20px;color:#8a8c91;font-size:13.5px;text-align:center">No payments yet.</div></sc-if>
+      <sc-for list="{{ crPays }}" as="p" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:8px;padding:12px 20px;border-bottom:1px solid #f3f2ef">
+        <div style="display:flex;align-items:center;gap:12px"><div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0"><span style="font-size:13.5px">{{ p.item }}</span><span style="font-size:11.5px;color:#8a8c91;font-family:'Geist Mono',monospace">{{ p.ref }} · {{ p.gateway }} · {{ p.date }}</span></div><span style="font-family:'Geist Mono',monospace;font-size:13px">{{ p.amount }}</span><span style="font-size:12px;padding:3px 8px;border-radius:7px;background:{{ p.sbg }};color:{{ p.sfg }}">{{ p.status }}</span></div>
+        <sc-if value="{{ p.hasBank }}"><div style="background:#f7f6f3;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.6;color:#3a3c40;white-space:pre-line">{{ p.bank }}</div></sc-if>
+      </div></sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- USAGE -->
+<sc-if value="{{ s.usage }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Usage</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">The last 30 days of credits, videos, API calls and storage.</p></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+    <sc-for list="{{ usKpis }}" as="k" hint-placeholder-count="4"><div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#6b6d72">{{ k.label }}</span><span style="font-size:24px;font-weight:600;letter-spacing:-0.02em;font-family:'Geist Mono',monospace">{{ k.v }}</span><span style="font-size:12px;color:#8a8c91">{{ k.sub }}</span></div></sc-for>
+  </div>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="font-weight:600;font-size:15px">Credits spent per day</span><div style="display:flex;padding:3px;border-radius:10px;background:#ebeae6;gap:2px"><sc-for list="{{ usModes }}" as="c"><button onClick="{{ c.on }}" style="height:28px;padding:0 10px;border:0;border-radius:8px;background:{{ c.segBg }};box-shadow:{{ c.segSh }};font:inherit;font-size:12.5px;font-weight:500;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+    <div style="display:flex;align-items:flex-end;gap:4px;height:180px;padding-top:8px">
+      <sc-for list="{{ usBars }}" as="b" hint-placeholder-count="30"><div title="{{ b.title }}" style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;min-width:0"><div style="height:{{ b.h }};min-height:2px;border-radius:4px 4px 0 0;background:{{ b.c }}"></div></div></sc-for>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#8a8c91;font-family:'Geist Mono',monospace"><span>{{ usFrom }}</span><span>{{ usTo }}</span></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;align-items:start">
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px">
+      <span style="font-weight:600;font-size:15px">Where credits went</span>
+      <sc-if value="{{ usCatsEmpty }}"><span style="color:#8a8c91;font-size:13.5px">No credits spent in the last 30 days.</span></sc-if>
+      <sc-for list="{{ usCats }}" as="c" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13.5px"><span>{{ c.label }}</span><span style="font-family:'Geist Mono',monospace;color:#6b6d72">{{ c.v }} · {{ c.pct }}%</span></div><div style="height:6px;border-radius:6px;background:#efeeea;overflow:hidden"><div style="width:{{ c.w }};height:100%;background:oklch(0.58 0.19 35)"></div></div></div></sc-for>
+    </div>
+    <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:12px">
+      <span style="font-weight:600;font-size:15px">Storage</span>
+      <span style="font-size:24px;font-weight:600;font-family:'Geist Mono',monospace">{{ usStorage }}</span>
+      <div style="height:8px;border-radius:8px;background:#efeeea;overflow:hidden"><div style="width:{{ usStoragePct }};height:100%;background:#17181a"></div></div>
+      <span style="font-size:13px;color:#6b6d72">{{ usStorageNote }}</span>
+      <button onClick="{{ go.media }}" style="align-self:flex-start;height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">Manage media</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- API -->
+<sc-if value="{{ s.api }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+    <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">API</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Create videos, run workflows and check jobs from your own code.</p></div>
+    <sc-if value="{{ apiAllowed }}"><div style="display:flex;gap:8px;flex-wrap:wrap"><input name="api_key_name" placeholder="Key name, e.g. Production" style="height:40px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:220px"><button onClick="{{ createKey }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer"><i class="icon-key-round" style="font-size:15px"></i>Create key</button></div></sc-if>
+  </div>
+  <sc-if value="{{ apiDenied }}"><div style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:14px;background:oklch(0.97 0.03 80);border:1px solid oklch(0.9 0.06 80)"><i class="icon-lock" style="font-size:18px"></i><span style="flex:1;font-size:14px">Your plan doesn't include API access. Upgrade to create API keys.</span><button onClick="{{ go.credits }}" style="height:34px;padding:0 12px;border-radius:9px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13px;cursor:pointer">See plans</button></div></sc-if>
+  <sc-if value="{{ hasNewKey }}"><div style="display:flex;flex-direction:column;gap:10px;padding:16px 18px;border-radius:14px;background:oklch(0.97 0.04 150);border:1px solid oklch(0.88 0.08 150)"><span style="font-weight:600;font-size:14px">Copy your new key now. You won't see it again.</span><div style="display:flex;gap:8px;flex-wrap:wrap"><code style="flex:1;min-width:0;padding:10px 12px;border-radius:9px;background:#fff;border:1px solid #e1e0dc;font-family:'Geist Mono',monospace;font-size:13px;overflow-x:auto;white-space:nowrap">{{ apiNewKey }}</code><button onClick="{{ copyNewKey }}" style="height:40px;padding:0 14px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">{{ copyLabel }}</button></div></div></sc-if>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid #efeeea;font-weight:600;font-size:15px">API keys</div>
+    <sc-if value="{{ apiKeysEmpty }}"><div style="padding:28px 20px;color:#8a8c91;font-size:13.5px;text-align:center">No keys yet.</div></sc-if>
+    <sc-for list="{{ apiKeys }}" as="k" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid #f3f2ef;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:180px"><span style="font-size:14px;font-weight:500">{{ k.name }}</span><span style="font-size:12px;color:#8a8c91;font-family:'Geist Mono',monospace">{{ k.masked }}</span></div>
+      <span style="font-size:12.5px;color:#6b6d72;font-family:'Geist Mono',monospace">{{ k.requests }} req · used {{ k.lastUsed }}</span>
+      <span style="font-size:12px;padding:3px 8px;border-radius:7px;background:{{ k.sbg }};color:{{ k.sfg }}">{{ k.st }}</span>
+      <sc-if value="{{ k.active }}"><button onClick="{{ k.revoke }}" style="height:32px;padding:0 12px;border-radius:8px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">Revoke</button></sc-if>
+    </div></sc-for>
+  </div>
+  <div style="background:#17181a;color:#e7e7ea;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="font-weight:600;font-size:14px">Quick start</span><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ apiSnips }}" as="c"><button onClick="{{ c.on }}" style="height:28px;padding:0 10px;border-radius:7px;border:1px solid #3a3c42;background:{{ c.bg }};color:#e7e7ea;font:inherit;font-size:12px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+    <pre style="margin:0;font-family:'Geist Mono',monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-all">{{ apiSnippet }}</pre>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:14px;background:#fff;border:1px solid #e8e7e3"><i class="icon-webhook" style="font-size:18px"></i><span style="flex:1;font-size:14px">Webhooks, request logs and every endpoint are in the AI Platform.</span><button onClick="{{ openPlatformApi }}" style="height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">API &amp; Webhooks</button></div>
+</div>
+</sc-if>
+
+<!-- SETTINGS -->
+<sc-if value="{{ s.settings }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px;max-width:860px">
+  <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">Settings</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">Your profile, password, security and notifications.</p></div>
+  <sc-if value="{{ tfaRequiredNote }}"><div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:oklch(0.97 0.03 80);border:1px solid oklch(0.9 0.06 80);font-size:14px"><i class="icon-shield-alert" style="font-size:18px"></i>Two-factor authentication is required for administrators. Turn it on below to open the admin area.</div></sc-if>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:16px">
+    <span style="font-weight:600;font-size:15px">Profile</span>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Name</span><input name="acc_name" key="{{ accKey }}" defaultValue="{{ acc.name }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Email <span style="color:#8a8c91;font-weight:400">{{ acc.verifiedLabel }}</span></span><input name="acc_email" type="email" key="{{ accKey }}" defaultValue="{{ acc.email }}" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+    </div>
+    <button onClick="{{ saveProfile }}" style="align-self:flex-start;height:38px;padding:0 16px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer">Save profile</button>
+  </div>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:16px">
+    <span style="font-weight:600;font-size:15px">Password</span>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Current password</span><input name="pw_current" key="{{ pwKey }}" type="password" autoComplete="current-password" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">New password</span><input name="pw_new" key="{{ pwKey }}" type="password" autoComplete="new-password" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+      <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Confirm new password</span><input name="pw_confirm" key="{{ pwKey }}" type="password" autoComplete="new-password" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+    </div>
+    <button onClick="{{ savePassword }}" style="align-self:flex-start;height:38px;padding:0 16px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer">Update password</button>
+  </div>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:220px"><span style="font-weight:600;font-size:15px">Two-factor authentication</span><span style="font-size:13.5px;color:#6b6d72">Ask for a 6-digit code from an authenticator app (Google Authenticator, 1Password, Authy…) when you sign in.</span></div><span style="font-size:12.5px;padding:4px 10px;border-radius:8px;background:{{ tfa.bg }};color:{{ tfa.fg }}">{{ tfa.label }}</span></div>
+    <sc-if value="{{ tfa.offIdle }}"><button onClick="{{ startTfa }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer"><i class="icon-shield-check" style="font-size:15px"></i>Turn on two-factor</button></sc-if>
+    <sc-if value="{{ tfa.setup }}"><div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;padding:16px;border-radius:12px;background:#f7f6f3">
+      <div role="img" aria-label="QR code" style="width:168px;height:168px;flex:none;border-radius:10px;border:1px solid #e1e0dc;background:#fff {{ tfa.qrBg }} center/150px no-repeat"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:220px">
+        <span style="font-size:13.5px;line-height:1.55">1. Scan the QR code with your authenticator app, or enter this key:</span>
+        <code style="padding:8px 10px;border-radius:8px;background:#fff;border:1px solid #e1e0dc;font-family:'Geist Mono',monospace;font-size:13px;word-break:break-all">{{ tfa.secret }}</code>
+        <span style="font-size:13.5px">2. Enter the 6-digit code it shows:</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input name="tfa_setup_code" inputMode="numeric" maxLength="6" autoComplete="one-time-code" placeholder="123456" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font-family:'Geist Mono',monospace;font-size:16px;letter-spacing:.2em;outline:none;width:150px"><button onClick="{{ confirmTfa }}" style="height:42px;padding:0 16px;border-radius:10px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer">Confirm</button><button onClick="{{ cancelTfa }}" style="height:42px;padding:0 14px;border-radius:10px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13.5px;cursor:pointer">Cancel</button></div>
+      </div>
+    </div></sc-if>
+    <sc-if value="{{ tfa.hasCodes }}"><div style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:oklch(0.97 0.04 150);border:1px solid oklch(0.88 0.08 150)">
+      <span style="font-weight:600;font-size:14px">Save your recovery codes</span><span style="font-size:13px;color:#3a3c40">Each code signs you in once if you lose your phone. Store them somewhere safe. They won't be shown again.</span>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px"><sc-for list="{{ tfa.codes }}" as="c"><code style="padding:6px 8px;border-radius:7px;background:#fff;border:1px solid #e1e0dc;font-family:'Geist Mono',monospace;font-size:13px;text-align:center">{{ c }}</code></sc-for></div>
+      <div style="display:flex;gap:8px"><button onClick="{{ copyCodes }}" style="height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">{{ copyCodesLabel }}</button><button onClick="{{ hideCodes }}" style="height:34px;padding:0 12px;border-radius:9px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13px;cursor:pointer">I've saved them</button></div>
+    </div></sc-if>
+    <sc-if value="{{ tfa.on }}"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="font-size:13px;color:#6b6d72;flex:1;min-width:200px">{{ tfa.left }}</span><button onClick="{{ regenCodes }}" style="height:34px;padding:0 12px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">New recovery codes</button><button onClick="{{ disableTfa }}" style="height:34px;padding:0 12px;border-radius:9px;border:1px solid oklch(0.85 0.08 25);background:#fff;color:oklch(0.5 0.18 25);font:inherit;font-size:13px;cursor:pointer">Turn off</button></div></sc-if>
+  </div>
+  <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:4px">
+    <span style="font-weight:600;font-size:15px;margin-bottom:8px">Email notifications</span>
+    <sc-for list="{{ prefRows }}" as="p" hint-placeholder-count="4"><div onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid #f3f2ef;cursor:pointer"><div style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font-size:14px">{{ p.label }}</span><span style="font-size:12.5px;color:#8a8c91">{{ p.desc }}</span></div><span style="width:38px;height:22px;border-radius:12px;background:{{ p.bg }};position:relative;flex:none;transition:background .15s"><span style="position:absolute;top:3px;left:{{ p.knob }};width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s"></span></span></div></sc-for>
+  </div>
+  <div style="background:#fff;border:1px solid oklch(0.9 0.05 25);border-radius:14px;padding:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:220px"><span style="font-weight:600;font-size:15px">Delete account</span><span style="font-size:13.5px;color:#6b6d72">Permanently delete your account, videos, media and API keys.</span></div>
+    <button onClick="{{ deleteAccount }}" style="height:38px;padding:0 16px;border-radius:10px;border:1px solid oklch(0.85 0.08 25);background:#fff;color:oklch(0.5 0.18 25);font:inherit;font-size:13.5px;font-weight:500;cursor:pointer">Delete account</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- SUPPORT -->
+<sc-if value="{{ s.support }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+  <div><h1 style="margin:0;font-size:26px;font-weight:600;letter-spacing:-0.02em">{{ supTitle }}</h1><p style="margin:4px 0 0;color:#6b6d72;font-size:14px">{{ supSub }}</p></div>
+  <div style="display:grid;grid-template-columns:{{ supCols }};gap:18px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <sc-if value="{{ tktOpen }}"><div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid #efeeea;flex-wrap:wrap"><button onClick="{{ backTkt }}" title="Back" style="width:30px;height:30px;border-radius:8px;border:1px solid #e1e0dc;background:#fff;display:grid;place-items:center;cursor:pointer"><i class="icon-arrow-left" style="font-size:14px"></i></button><div style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0"><span style="font-weight:600;font-size:14.5px">{{ tkt.subject }}</span><span style="font-size:12px;color:#8a8c91;font-family:'Geist Mono',monospace">{{ tkt.code }} · {{ tkt.category }} · {{ tkt.who }}</span></div><span style="font-size:12px;padding:3px 8px;border-radius:7px;background:{{ tkt.sbg }};color:{{ tkt.sfg }}">{{ tkt.status }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:12px;padding:18px;max-height:440px;overflow-y:auto">
+          <sc-for list="{{ tktMsgs }}" as="m"><div style="align-self:{{ m.align }};max-width:85%;display:flex;flex-direction:column;gap:4px"><span style="font-size:11.5px;color:#8a8c91">{{ m.name }} · {{ m.when }}</span><div style="padding:10px 13px;border-radius:12px;background:{{ m.bg }};color:{{ m.fg }};font-size:13.5px;line-height:1.55;white-space:pre-wrap">{{ m.body }}</div></div></sc-for>
+        </div>
+        <sc-if value="{{ tkt.canReply }}"><div style="display:flex;flex-direction:column;gap:10px;padding:14px 18px;border-top:1px solid #efeeea"><textarea name="tkt_reply" key="{{ replyKey }}" rows="3" placeholder="Write a reply…" style="padding:10px 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;resize:vertical;width:100%"></textarea><div style="display:flex;gap:8px;justify-content:flex-end"><button onClick="{{ closeTkt }}" style="height:36px;padding:0 14px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:13px;cursor:pointer">Close ticket</button><button onClick="{{ sendReply }}" style="height:36px;padding:0 14px;border-radius:9px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13px;font-weight:500;cursor:pointer">Send reply</button></div></div></sc-if>
+      </div></sc-if>
+      <sc-if value="{{ tktNew }}"><div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-weight:600;font-size:15px">Contact support</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Subject</span><input name="tkt_subject" key="{{ tktKey }}" placeholder="What do you need help with?" style="height:42px;padding:0 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;width:100%"></label>
+          <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Category</span><select name="tkt_category" key="{{ tktKey }}" style="height:42px;padding:0 11px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;background:#fff"><option>Question</option><option>Rendering problem</option><option>Billing</option><option>AI providers</option><option>Bug report</option><option>Feature request</option></select></label>
+        </div>
+        <label style="display:flex;flex-direction:column;gap:7px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Message</span><textarea name="tkt_message" key="{{ tktKey }}" rows="5" placeholder="Tell us what happened. Include the video name or run ID if it's about one." style="padding:10px 13px;border:1px solid #e1e0dc;border-radius:10px;font:inherit;font-size:14px;outline:none;resize:vertical;width:100%"></textarea></label>
+        <button onClick="{{ submitTicket }}" style="align-self:flex-start;height:40px;padding:0 16px;border-radius:10px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer">{{ submitLabel }}</button>
+      </div></sc-if>
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid #efeeea;font-weight:600;font-size:15px">{{ tktListTitle }}</div>
+        <sc-if value="{{ tktsEmpty }}"><div style="padding:28px 20px;color:#8a8c91;font-size:13.5px;text-align:center">No tickets yet.</div></sc-if>
+        <sc-for list="{{ tkts }}" as="t" hint-placeholder-count="2"><div onClick="{{ t.open }}" style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #f3f2ef;cursor:pointer;background:{{ t.bg }}"><div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0"><span style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.subject }}</span><span style="font-size:12px;color:#8a8c91;font-family:'Geist Mono',monospace">{{ t.code }} · {{ t.meta }}</span></div><span style="font-size:12px;padding:3px 8px;border-radius:7px;background:{{ t.sbg }};color:{{ t.sfg }}">{{ t.status }}</span></div></sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:4px">
+        <span style="font-weight:600;font-size:15px;margin-bottom:6px">Common questions</span>
+        <sc-for list="{{ faq }}" as="f"><div style="border-top:1px solid #f3f2ef;padding:10px 0"><div onClick="{{ f.toggle }}" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;font-weight:500"><span style="flex:1">{{ f.q }}</span><i class="{{ f.icon }}" style="font-size:14px;color:#8a8c91"></i></div><sc-if value="{{ f.open }}"><p style="margin:8px 0 0;font-size:13px;color:#55575c;line-height:1.6">{{ f.a }}</p></sc-if></div></sc-for>
+      </div>
+      <div style="background:#fff;border:1px solid #e8e7e3;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px">
+        <a href="/docs" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;font-size:13.5px"><i class="icon-book-open" style="font-size:16px"></i>Documentation</a>
+        <a href="/platform/api" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;font-size:13.5px"><i class="icon-code" style="font-size:16px"></i>API reference</a>
+        <a href="mailto:{{ supportEmail }}" style="display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;font-size:13.5px"><i class="icon-mail" style="font-size:16px"></i>{{ supportEmail }}</a>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+

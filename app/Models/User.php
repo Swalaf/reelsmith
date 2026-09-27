@@ -11,8 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'status', 'credits', 'plan_id', 'brand', 'onboarding', 'email_verified_at'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['name', 'email', 'password', 'role', 'status', 'credits', 'plan_id', 'brand', 'onboarding', 'email_verified_at', 'prefs'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -32,6 +32,10 @@ class User extends Authenticatable
             'brand' => 'array',
             'onboarding' => 'array',
             'credits' => 'integer',
+            'prefs' => 'array',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -43,6 +47,19 @@ class User extends Authenticatable
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
+    }
+
+    public function hasTwoFactor(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && $this->two_factor_secret;
+    }
+
+    /** Notification preferences, with defaults. */
+    public function pref(string $key): bool
+    {
+        $prefs = (array) $this->prefs + ['renderDone' => true, 'lowCredits' => true, 'product' => false, 'weekly' => false];
+
+        return (bool) ($prefs[$key] ?? false);
     }
 
     public function apiKeys(): HasMany

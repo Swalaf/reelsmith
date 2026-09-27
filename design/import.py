@@ -80,6 +80,16 @@ T = {
          '<sc-if value="{{ vErr }}"><span style="color:oklch(0.5 0.18 25);font-size:13px;text-align:center">{{ vErr }}</span></sc-if><button onClick="{{ doVerify }}" style="height:48px;border-radius:12px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer">Verify email</button>', 1),
         ('Didn\'t get it? <button style="background:none;border:0;padding:0;font:inherit;color:#17181a;font-weight:600;cursor:pointer">Resend code</button> · 0:42',
          'Didn\'t get it? <button onClick="{{ resendCode }}" style="background:none;border:0;padding:0;font:inherit;color:#17181a;font-weight:600;cursor:pointer">Resend code</button>{{ resendNote }}', 1),
+        # Two-factor challenge: a real code input (or a recovery-code field), trust checkbox, error line
+        ('<div style="display:flex;gap:8px;justify-content:center"><sc-for list="{{ tfaBoxes }}" as="c"><span style="width:48px;height:56px;border-radius:11px;border:1.5px solid {{ c.bd }};display:grid;place-items:center;font-family:\'Geist Mono\',monospace;font-size:22px;font-weight:500">{{ c.v }}</span></sc-for></div>',
+         '<sc-if value="{{ tfaTotp }}"><div style="position:relative;display:flex;gap:8px;justify-content:center"><input name="tfa_code" value="{{ tcode }}" onChange="{{ setTcode }}" inputMode="numeric" maxLength="6" autoComplete="one-time-code" aria-label="Authentication code" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:text;font-size:16px;z-index:2"><sc-for list="{{ tfaBoxes }}" as="c"><span style="width:48px;height:56px;border-radius:11px;border:1.5px solid {{ c.bd }};display:grid;place-items:center;font-family:\'Geist Mono\',monospace;font-size:22px;font-weight:500">{{ c.v }}</span></sc-for></div></sc-if>'
+         '<sc-if value="{{ tfaRecovery }}"><input name="tfa_recovery" placeholder="xxxxxx-xxxxxx" autoComplete="off" aria-label="Recovery code" style="height:52px;padding:0 14px;border:1.5px solid #17181a;border-radius:11px;font-family:\'Geist Mono\',monospace;font-size:18px;text-align:center;outline:none;width:100%"></sc-if>'
+         '<sc-if value="{{ tErr }}"><span style="color:oklch(0.5 0.18 25);font-size:13px;text-align:center">{{ tErr }}</span></sc-if>', 1),
+        ('<input type="checkbox" style="width:17px;height:17px;accent-color:#17181a">Trust this device for 30 days', '<input name="tfa_trust" type="checkbox" style="width:17px;height:17px;accent-color:#17181a">Trust this device for 30 days', 1),
+        ('<button onClick="{{ doVerify }}" style="height:48px;border-radius:12px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer">Verify</button>',
+         '<button onClick="{{ doTfa }}" style="height:48px;border-radius:12px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer">{{ tfaBtn }}</button>', 1),
+        ('<button style="align-self:center;background:none;border:0;padding:0;font:inherit;font-size:14px;color:#55575c;cursor:pointer;text-decoration:underline">Use a recovery code instead</button>',
+         '<button onClick="{{ toggleRecovery }}" style="align-self:center;background:none;border:0;padding:0;font:inherit;font-size:14px;color:#55575c;cursor:pointer;text-decoration:underline">{{ recoveryLabel }}</button>', 1),
         # Checkout coupon + onboarding topic
         ('<input placeholder="Coupon code"', '<input name="coupon" placeholder="Coupon code"', 1),
         ('<input defaultValue="5 ways Hydra keeps you hydrated" style="height:50px', '<input name="ob_topic" defaultValue="5 ways Hydra keeps you hydrated" style="height:50px', 1),
@@ -249,10 +259,21 @@ T = {
 # Logic patches applied to the design's JS before it is renamed.
 L = {
     'website': [],
-    'studio': [],
+    'studio': [
+        # Account screens added from design/extra/studio-account.html
+        ("const titles = {dashboard:'Dashboard',", "const titles = {media:'Media Library',credits:'Credits',usage:'Usage',api:'API',settings:'Settings',support:'Support',dashboard:'Dashboard',", 1),
+        ("const scrKnown = ['dashboard','create','render','editor','library','templates','brand','providers'];", "const scrKnown = ['dashboard','create','render','editor','library','templates','brand','providers','media','credits','usage','api','settings','support'];", 1),
+        ("['dashboard','create','library','templates','providers','editor','brand'].forEach(k=>g[k]=()=>this.go(k));", "['dashboard','create','library','templates','providers','editor','brand','media','credits','usage','api','settings','support'].forEach(k=>g[k]=()=>this.go(k));", 1),
+    ],
     'platform': [],
     'admin': [],
     'installer': [],
+}
+
+
+# Screens the design links to but doesn't draw, written in the design's own style.
+EXTRA = {
+    'studio': [('<!-- BRAND KIT -->', 'studio-account.html')],
 }
 
 
@@ -307,6 +328,10 @@ def main() -> None:
         template, props, logic = m.group(1), html.unescape(s.group(1) or '{}'), s.group(2)
 
         template = apply(template, T[page], page + ' template')
+        for marker, extra in EXTRA.get(page, []):
+            if template.count(marker) != 1:
+                sys.exit(f'[{page}] extra-screen marker not found: {marker!r}')
+            template = template.replace(marker, (ROOT / 'design' / 'extra' / extra).read_text(encoding='utf-8') + '\n' + marker)
         # Self-hosted icon font (public/vendor/lucide) instead of unpkg.com
         template = template.replace('https://unpkg.com/lucide-static@0.460.0/font/lucide.css', '/vendor/lucide/lucide.css')
         for a, b in LINKS.items():

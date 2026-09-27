@@ -6,7 +6,7 @@ class Component extends DesignComponent {
     this.VIDEOS = (R.projects || []).map(x => this.toVideo(x));
     if (R.templates && R.templates.length) this.TPL = R.templates.map(t => [t.name, t.cat, t.dur, t.ratio]);
     this.state = { ...this.state,
-      screen: R.startScreen || this.state.screen,
+      screen: R.setup2fa ? 'settings' : (R.startScreen || this.state.screen), acct: R.account || {},
       prov: (R.providers || []).map(x => ({ ...x })),
       brand: { ...this.state.brand, ...(R.brand || {}) },
       projectId: null, busy: false, output: null
@@ -304,6 +304,189 @@ class Component extends DesignComponent {
         this.setState(x => ({ cfg: null, prov: x.prov.map(q => q.id === cp.id ? { ...q, ...r.provider } : q) }));
       } catch (e) { alert(e.message); }
     };
+    this.accountVals(v);
     return v;
+  }
+
+  // ------------------------------------------------ account screens (Media, Credits, Usage, API, Settings, Support)
+  acct() { return this.state.acct || window.RS.account || {}; }
+  async reloadAccount() { try { const r = await rs.get('/studio/account'); if (r.user) window.RS.user = r.user; this.setState({ acct: r }); } catch (e) {} }
+  patchAcct(part) { this.setState(st => ({ acct: { ...(st.acct || window.RS.account || {}), ...part } })); }
+  seg(list, cur, set) { return list.map(x => { const label = Array.isArray(x) ? x[0] : x; return { label, count: Array.isArray(x) ? x[1] : '', on: () => set(label), segBg: cur === label ? '#fff' : 'transparent', segSh: cur === label ? '0 1px 2px rgba(0,0,0,.08)' : 'none' }; }); }
+  statusColors(st) { return ({ Completed: ['oklch(0.42 0.12 150)', 'oklch(0.95 0.04 150)'], Paid: ['oklch(0.42 0.12 150)', 'oklch(0.95 0.04 150)'], Open: ['oklch(0.45 0.14 250)', 'oklch(0.95 0.03 250)'], Answered: ['oklch(0.42 0.12 150)', 'oklch(0.95 0.04 150)'], Pending: ['oklch(0.5 0.13 70)', 'oklch(0.96 0.05 85)'], Failed: ['oklch(0.5 0.18 25)', 'oklch(0.95 0.03 25)'], Refunded: ['#55575c', '#efeeea'], Closed: ['#55575c', '#efeeea'] })[st] || ['#55575c', '#efeeea']; }
+  async copy(text, stateKey) { try { await navigator.clipboard.writeText(text); this.setState({ [stateKey]: 'Copied' }); setTimeout(() => this.setState({ [stateKey]: null }), 1500); } catch (e) { prompt('Copy this:', text); } }
+
+  accountVals(v) {
+    const s = this.state, A = this.acct(), R = window.RS;
+    v.go = { ...v.go, media: () => this.go('media'), credits: () => this.go('credits') };
+
+    // ---- Media library
+    const media = A.media || [], kinds = { Images: 'image', Videos: 'video', Audio: 'audio' }, mTab = s.mTab || 'All';
+    v.mTabs = this.seg([['All', media.length], ['Images', media.filter(m => m.kind === 'image').length], ['Videos', media.filter(m => m.kind === 'video').length], ['Audio', media.filter(m => m.kind === 'audio').length]], mTab, t => this.setState({ mTab: t }));
+    v.mItems = media.filter(m => mTab === 'All' || m.kind === kinds[mTab]).map(m => ({ ...m, isVideo: m.kind === 'video', isAudio: m.kind === 'audio', canDel: m.deletable,
+      bg: m.kind === 'image' ? this.bgUrl(m.url, '#23343f') : m.kind === 'video' ? '#23343f' : 'linear-gradient(135deg,#3b3f58,#5b4a6e)',
+      open: () => window.open(m.url, '_blank'),
+      del: async () => { if (!confirm('Delete "' + m.name + '"? Scenes that use it will fall back to a generated visual.')) return; try { const r = await rs.del('/studio/media/' + m.id); this.patchAcct({ media: r.media }); this.loadMedia(); } catch (e) { alert(e.message); } } }));
+    v.mEmpty = v.mItems.length === 0;
+    const U = A.usage || {};
+    v.mStorage = (U.storage || '0 KB') + ' / ' + (U.storageQuota || '1 GB'); v.mStoragePct = (U.storagePct || 0) + '%';
+    v.mUploadLabel = s.mUploading ? 'Uploading…' : 'Upload';
+    v.mUpload = () => {
+      if (s.mUploading) return;
+      const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*,video/mp4,video/quicktime,video/webm,audio/*';
+      input.onchange = async () => {
+        if (!input.files[0]) return;
+        this.setState({ mUploading: true });
+        const fd = new FormData(); fd.append('file', input.files[0]);
+        try {
+          const res = await fetch('/studio/media', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': window.RS.csrf, 'Accept': 'application/json' } });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.message || (data.errors && Object.values(data.errors)[0][0]) || 'Upload failed');
+          this.patchAcct({ media: data.media }); this.loadMedia(); this.reloadAccount();
+        } catch (e) { alert(e.message); }
+        this.setState({ mUploading: false });
+      };
+      input.click();
+    };
+
+    // ---- Credits & billing
+    const C = A.credits || {};
+    v.crKpis = [['Balance', C.balance, C.plan + ' plan'], ['Plan', C.plan, C.planPrice], ['Spent this month', C.spentMonth, 'credits used'], ['Added this month', C.addedMonth, 'plan, purchases, bonuses']].map(k => ({ label: k[0], v: k[1] || '0', sub: k[2] || '' }));
+    v.crPlans = (C.plans || []).map(p => ({ ...p, per: p.price > 0 ? '/mo' : '', bd: p.current ? '#17181a' : '#e8e7e3',
+      btn: p.current ? 'Current plan' : p.price > 0 ? 'Upgrade' : 'Free', btnBg: p.current ? '#f3f2ef' : p.price > 0 ? '#17181a' : '#fff', btnFg: p.current ? '#6b6d72' : p.price > 0 ? '#fff' : '#17181a',
+      btnBd: p.current || p.price > 0 ? '0' : '1px solid #e1e0dc', cursor: p.current || p.price <= 0 ? 'default' : 'pointer',
+      on: () => { if (!p.current && p.price > 0) window.location.href = '/checkout?plan=' + encodeURIComponent(p.slug); } }));
+    v.crBuy = () => { window.location.href = '/pricing'; };
+    v.crHist = (C.history || []).map(h => ({ ...h, fg: h.positive ? 'oklch(0.45 0.13 150)' : '#17181a' }));
+    v.crHistEmpty = v.crHist.length === 0;
+    v.crPays = (C.payments || []).map(p => { const c = this.statusColors(p.status); return { ...p, sfg: c[0], sbg: c[1], hasBank: !!(p.bank && p.bank.length), bank: (p.bank || []).join('\n') }; });
+    v.crPaysEmpty = v.crPays.length === 0;
+
+    // ---- Usage
+    const mode = s.usMode || 'Credits', days = U.days || [];
+    v.usModes = this.seg(['Credits', 'Videos'], mode, m => this.setState({ usMode: m }));
+    const max = mode === 'Credits' ? (U.max || 1) : (U.maxVideos || 1);
+    v.usBars = days.map(d => { const val = mode === 'Credits' ? d.v : d.videos; return { h: Math.round(val / max * 100) + '%', c: val ? (mode === 'Credits' ? 'oklch(0.58 0.19 35)' : '#17181a') : '#efeeea', title: d.label + ' · ' + val + (mode === 'Credits' ? ' credits' : ' videos') }; });
+    v.usFrom = days.length ? days[0].label : ''; v.usTo = days.length ? days[days.length - 1].label : '';
+    v.usKpis = [['Credits spent', U.spent30, 'last 30 days'], ['Videos created', String(U.videos30 || 0), (U.rendered30 || 0) + ' rendered'], ['API calls', String(U.apiCalls30 || 0), 'last 30 days'], ['Storage', U.storage || '0 KB', 'of ' + (U.storageQuota || '1 GB')]].map(k => ({ label: k[0], v: k[1] || '0', sub: k[2] }));
+    v.usCats = (U.byCategory || []).map(c => ({ ...c, w: c.pct + '%' }));
+    v.usCatsEmpty = v.usCats.length === 0;
+    v.usStorage = U.storage || '0 KB'; v.usStoragePct = (U.storagePct || 0) + '%';
+    v.usStorageNote = (U.storagePct || 0) + '% of your ' + (U.storageQuota || '1 GB') + ' plan storage (renders and uploads).';
+
+    // ---- API
+    const API = A.api || {};
+    v.apiAllowed = !!API.allowed; v.apiDenied = !API.allowed;
+    v.apiKeys = (API.keys || []).map(k => ({ ...k, active: !k.revoked, st: k.revoked ? 'Revoked' : 'Active', sfg: k.revoked ? '#55575c' : 'oklch(0.42 0.12 150)', sbg: k.revoked ? '#efeeea' : 'oklch(0.95 0.04 150)',
+      revoke: async () => { if (!confirm('Revoke "' + k.name + '"? Apps using it stop working immediately.')) return; try { const r = await rs.del('/studio/api-keys/' + k.id); this.patchAcct({ api: r.api }); } catch (e) { alert(e.message); } } }));
+    v.apiKeysEmpty = v.apiKeys.length === 0;
+    v.hasNewKey = !!s.newKey; v.apiNewKey = s.newKey || ''; v.copyLabel = s.keyCopied || 'Copy';
+    v.copyNewKey = () => this.copy(s.newKey, 'keyCopied');
+    v.createKey = async () => {
+      const name = (rs.val('api_key_name') || '').trim() || 'My key';
+      try { const r = await rs.post('/studio/api-keys', { name }); this.patchAcct({ api: r.api }); this.setState({ newKey: r.key }); } catch (e) { alert(e.message); }
+    };
+    const base = API.base || (location.origin + '/api'), key = s.newKey || 'rsk_live_…';
+    const snips = {
+      'Create a video': 'curl -X POST ' + base + '/v1/videos \\\n  -H "Authorization: Bearer ' + key + '" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"topic": "3 tips for better sleep", "ratio": "9:16", "duration": "30s"}\'',
+      'Check a job': 'curl ' + base + '/jobs/vid_123 \\\n  -H "Authorization: Bearer ' + key + '"',
+      'Run a workflow': 'curl -X POST ' + base + '/workflows/run \\\n  -H "Authorization: Bearer ' + key + '" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"workflow_id": "wf_1", "input": {"topic": "Morning routines"}}\'',
+      'Credits': 'curl ' + base + '/v1/credits \\\n  -H "Authorization: Bearer ' + key + '"'
+    };
+    const snip = s.apiSnip || 'Create a video';
+    v.apiSnips = Object.keys(snips).map(k => ({ label: k, bg: k === snip ? '#3a3c42' : 'transparent', on: () => this.setState({ apiSnip: k }) }));
+    v.apiSnippet = snips[snip];
+    v.openPlatformApi = () => { window.location.href = '/platform/api'; };
+
+    // ---- Settings
+    const ST = A.settings || {};
+    v.acc = { name: ST.name || '', email: ST.email || '', verifiedLabel: ST.verified ? '· verified' : '· not verified' };
+    v.accKey = 'acc' + (s.accV || 0); v.pwKey = 'pw' + (s.pwV || 0);
+    v.saveProfile = async () => {
+      try {
+        const r = await rs.put('/studio/account/profile', { name: rs.val('acc_name'), email: rs.val('acc_email') });
+        window.RS.user = r.user; this.patchAcct({ settings: r.settings }); this.setState({ accV: (s.accV || 0) + 1 });
+        alert(r.verify ? 'Saved. We sent a verification code to your new email address.' : 'Profile saved.');
+        if (r.verify) window.location.href = '/verify';
+      } catch (e) { alert(e.message); }
+    };
+    v.savePassword = async () => {
+      try {
+        await rs.put('/studio/account/password', { current_password: rs.val('pw_current'), password: rs.val('pw_new'), password_confirmation: rs.val('pw_confirm') });
+        this.setState({ pwV: (s.pwV || 0) + 1 }); alert('Password updated. Other devices were signed out.');
+      } catch (e) { alert(e.message); }
+    };
+    const setup = s.tfaSetup, on = !!ST.twoFactor;
+    v.tfaRequiredNote = !!(ST.twoFactorRequired && !on);
+    v.tfa = { on: on && !s.tfaCodes, offIdle: !on && !setup, setup: !!setup, hasCodes: !!s.tfaCodes, codes: s.tfaCodes || [],
+      qrBg: setup ? "url('" + setup.qr + "')" : 'none', secret: setup ? setup.secret : '',
+      label: on ? 'On' : 'Off', bg: on ? 'oklch(0.95 0.04 150)' : '#efeeea', fg: on ? 'oklch(0.42 0.12 150)' : '#55575c',
+      left: (ST.recoveryLeft || 0) + ' recovery codes left' };
+    v.startTfa = async () => { try { this.setState({ tfaSetup: await rs.post('/studio/account/2fa/setup') }); } catch (e) { alert(e.message); } };
+    v.cancelTfa = () => this.setState({ tfaSetup: null });
+    v.confirmTfa = async () => {
+      try { const r = await rs.post('/studio/account/2fa/confirm', { code: rs.val('tfa_setup_code') }); this.patchAcct({ settings: r.settings }); this.setState({ tfaSetup: null, tfaCodes: r.codes }); } catch (e) { alert(e.message); }
+    };
+    v.copyCodesLabel = s.codesCopied || 'Copy codes';
+    v.copyCodes = () => this.copy((s.tfaCodes || []).join('\n'), 'codesCopied');
+    v.hideCodes = () => this.setState({ tfaCodes: null });
+    v.regenCodes = async () => {
+      const password = prompt('Enter your password to create new recovery codes (the old ones stop working):'); if (!password) return;
+      try { const r = await rs.post('/studio/account/2fa/recovery', { password }); this.patchAcct({ settings: r.settings }); this.setState({ tfaCodes: r.codes }); } catch (e) { alert(e.message); }
+    };
+    v.disableTfa = async () => {
+      const password = prompt('Enter your password to turn off two-factor authentication:'); if (!password) return;
+      try { const r = await rs.api('DELETE', '/studio/account/2fa', { password }); this.patchAcct({ settings: r.settings }); } catch (e) { alert(e.message); }
+    };
+    const prefs = ST.prefs || {};
+    v.prefRows = [['renderDone', 'Video ready', 'Email me when a render finishes.'], ['lowCredits', 'Low credits', 'Warn me when my balance runs low.'], ['product', 'Product updates', 'New features and templates, about once a month.'], ['weekly', 'Weekly summary', 'Videos, credits and runs from the past week.']].map(p => ({
+      label: p[1], desc: p[2], bg: prefs[p[0]] ? 'oklch(0.58 0.19 35)' : '#d6d4ce', knob: prefs[p[0]] ? '19px' : '3px',
+      toggle: async () => { const next = { ...prefs, [p[0]]: !prefs[p[0]] }; this.patchAcct({ settings: { ...ST, prefs: next } }); try { await rs.put('/studio/account/prefs', { [p[0]]: next[p[0]] }); } catch (e) { alert(e.message); } } }));
+    v.deleteAccount = async () => {
+      if (!confirm('Delete your account and everything in it? This cannot be undone.')) return;
+      const password = prompt('Enter your password to confirm:'); if (!password) return;
+      try { await rs.api('DELETE', '/studio/account', { password }); window.location.href = '/'; } catch (e) { alert(e.message); }
+    };
+
+    // ---- Support
+    const tickets = A.tickets || [], admin = me().role === 'admin';
+    function me() { return window.RS.user || {}; }
+    v.supTitle = admin ? 'Support inbox' : 'Support'; v.supSub = admin ? 'Tickets from every user. Your replies are emailed to them.' : 'Ask us anything. We usually reply within one business day.';
+    v.supCols = this.state.isMobile || window.innerWidth < 980 ? '1fr' : 'minmax(0,1fr) 320px';
+    const sel = tickets.find(t => t.id === s.tkSel);
+    v.tktOpen = !!sel; v.tktNew = !sel;
+    v.tktListTitle = admin ? 'All tickets' : 'Your tickets';
+    v.tkts = tickets.map(t => { const c = this.statusColors(t.status); return { ...t, sfg: c[0], sbg: c[1], bg: t.id === s.tkSel ? '#f7f6f3' : '#fff', meta: (admin && !t.mine ? t.user + ' · ' : '') + t.category + ' · ' + t.updated, open: () => this.setState({ tkSel: t.id }) }; });
+    v.tktsEmpty = v.tkts.length === 0;
+    if (sel) {
+      const c = this.statusColors(sel.status);
+      v.tkt = { ...sel, sfg: c[0], sbg: c[1], who: sel.mine ? 'you' : sel.user + ' <' + sel.email + '>', canReply: sel.status !== 'Closed' };
+      v.tktMsgs = (sel.messages || []).map(m => { const mine = (m.from === 'staff') === (admin && !sel.mine); return { ...m, align: mine ? 'flex-end' : 'flex-start', bg: mine ? '#17181a' : '#f3f2ef', fg: mine ? '#fff' : '#17181a', name: m.from === 'staff' ? m.name + ' (support)' : m.name }; });
+    } else { v.tkt = {}; v.tktMsgs = []; }
+    v.replyKey = 'r' + (s.replyV || 0); v.tktKey = 't' + (s.tktV || 0);
+    v.backTkt = () => this.setState({ tkSel: null });
+    v.sendReply = async () => {
+      const message = (rs.val('tkt_reply') || '').trim(); if (!message) return;
+      try { const r = await rs.post('/studio/tickets/' + sel.id + '/reply', { message }); this.patchAcct({ tickets: r.tickets }); this.setState({ replyV: (s.replyV || 0) + 1 }); } catch (e) { alert(e.message); }
+    };
+    v.closeTkt = async () => { try { const r = await rs.post('/studio/tickets/' + sel.id + '/close'); this.patchAcct({ tickets: r.tickets }); } catch (e) { alert(e.message); } };
+    v.submitLabel = s.tktBusy ? 'Sending…' : 'Send to support';
+    v.submitTicket = async () => {
+      if (s.tktBusy) return;
+      this.setState({ tktBusy: true });
+      try {
+        const r = await rs.post('/studio/tickets', { subject: rs.val('tkt_subject'), category: rs.val('tkt_category'), message: rs.val('tkt_message') });
+        this.patchAcct({ tickets: r.tickets }); this.setState({ tktBusy: false, tktV: (s.tktV || 0) + 1, tkSel: (r.tickets[0] || {}).id || null });
+      } catch (e) { this.setState({ tktBusy: false }); alert(e.message); }
+    };
+    const faqs = [
+      ['Why does my video have no AI images?', 'No image provider is connected, or all of them failed. Add a key under AI Providers (Cloudflare Workers AI and Hugging Face have free tiers). Failed scenes become colour cards, and the reason is in the render log.'],
+      ['How are credits charged?', 'Rendering costs credits per video (more for AI video scenes), and generating an image or clip for a scene costs a little. Failed renders are refunded automatically. See Usage for the breakdown.'],
+      ['Can I use my own footage?', 'Yes. Upload images or MP4 clips here in Media Library or straight onto a scene in the editor, then pick them for any scene.'],
+      ['How do I get the API key?', 'Go to API in the sidebar and create a key. It is shown once. API access depends on your plan.'],
+      ['I lost my phone with the authenticator app', 'Sign in with one of your recovery codes ("Use a recovery code instead"), then turn two-factor off and on again in Settings. If you have no codes left, contact support.']
+    ];
+    v.faq = faqs.map((f, i) => ({ q: f[0], a: f[1], open: s.faqOpen === i, icon: s.faqOpen === i ? 'icon-chevron-up' : 'icon-chevron-down', toggle: () => this.setState({ faqOpen: s.faqOpen === i ? null : i }) }));
+    v.supportEmail = (R.whiteLabel && R.whiteLabel.support) || R.supportEmail || 'support@example.com';
   }
 }

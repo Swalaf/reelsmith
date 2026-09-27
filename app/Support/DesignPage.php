@@ -22,6 +22,7 @@ class DesignPage
             'page' => $page,
             'csrf' => csrf_token(),
             'appName' => Branding::appName(),
+            'supportEmail' => Branding::whiteLabel()['support'] ?? null,
             'user' => auth()->user() ? Boot::me(auth()->user()) : null,
         ], $boot);
 

@@ -12,7 +12,7 @@ class Component extends DesignComponent {
       prov: A.providers || [],
       keys: A.apiKeys || [],
       wl: { ...this.state.wl, ...(A.whitelabel || {}) },
-      setToggles: { ...this.state.setToggles, ...(saved.toggles || {}) },
+      setToggles: { ...this.state.setToggles, twofa: false, ...(saved.toggles || {}) },
       gw: { ...this.state.gw, ...(saved.gateways || {}) },
       rules: saved.creditRules || this.state.rules,
       rtRule: saved.routing ? saved.routing.rule : undefined,

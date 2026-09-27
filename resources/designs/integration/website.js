@@ -122,6 +122,27 @@ class Component extends DesignComponent {
     v.setVcode = e => this.setState({ vcode: e.target.value.replace(/\D/g, '').slice(0, 6), vErr: '' });
     v.codeBoxes = [0, 1, 2, 3, 4, 5].map(i => ({ v: digits[i] || '', bd: i === Math.min(digits.length, 5) ? '#17181a' : '#e1e0dc' }));
     v.resendNote = s.resent ? ' · sent' : '';
+    // Two-factor challenge after a password login
+    const tdigits = (s.tcode || '').split('');
+    v.tfaTotp = !s.recovery; v.tfaRecovery = !!s.recovery; v.tcode = s.tcode || ''; v.tErr = s.tErr || '';
+    v.setTcode = e => this.setState({ tcode: e.target.value.replace(/\D/g, '').slice(0, 6), tErr: '' });
+    v.tfaBoxes = [0, 1, 2, 3, 4, 5].map(i => ({ v: tdigits[i] || '', bd: i === Math.min(tdigits.length, 5) ? '#17181a' : '#e1e0dc' }));
+    v.tfaBtn = s.tfaBusy ? 'Checking…' : 'Verify';
+    v.recoveryLabel = s.recovery ? 'Use my authenticator app instead' : 'Use a recovery code instead';
+    v.toggleRecovery = () => this.setState({ recovery: !s.recovery, tErr: '' });
+    v.doTfa = async () => {
+      if (s.tfaBusy) return;
+      this.setState({ tfaBusy: true, tErr: '' });
+      try {
+        const r = await rs.post('/two-factor', s.recovery ? { recovery_code: rs.val('tfa_recovery'), trust: !!rs.val('tfa_trust') } : { code: s.tcode, trust: !!rs.val('tfa_trust') });
+        window.RS.csrf = r.csrf || window.RS.csrf;
+        this.setState({ tfaBusy: false });
+        this.after(r.user);
+      } catch (e) {
+        if (e.status === 419 || (e.data && e.data.restart)) { this.setState({ tfaBusy: false, tcode: '' }); alert('Your sign-in expired. Please log in again.'); this.go('login'); return; }
+        this.setState({ tfaBusy: false, tErr: e.message, tcode: '' });
+      }
+    };
     v.resendCode = async () => { try { await rs.post('/verify/resend'); this.setState({ resent: true }); } catch (e) { alert(e.message); } };
     v.doVerify = async () => {
       if (s.page !== 'verify') { this.after(window.RS.user); return; }
