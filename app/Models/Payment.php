@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
-    protected $fillable = ['user_id', 'plan_id', 'reference', 'gateway_ref', 'item', 'gateway', 'amount', 'status'];
+    protected $fillable = ['user_id', 'plan_id', 'reference', 'gateway_ref', 'item', 'gateway', 'amount', 'status', 'meta'];
 
     protected function casts(): array
     {
-        return ['amount' => 'float'];
+        return ['amount' => 'float', 'meta' => 'array'];
     }
 
     public function user(): BelongsTo

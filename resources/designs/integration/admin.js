@@ -13,7 +13,7 @@ class Component extends DesignComponent {
       keys: A.apiKeys || [],
       wl: { ...this.state.wl, ...(A.whitelabel || {}) },
       setToggles: { ...this.state.setToggles, twofa: false, ...(saved.toggles || {}) },
-      gw: { ...this.state.gw, ...(saved.gateways || {}) },
+      gw: { ...this.state.gw, stripe: true, paypal: true, razorpay: true, paystack: true, bank: true, ...(saved.gateways || {}) },
       rules: saved.creditRules || this.state.rules,
       rtRule: saved.routing ? saved.routing.rule : undefined,
       rtOrder: saved.routing ? saved.routing.order : undefined,
@@ -144,8 +144,12 @@ class Component extends DesignComponent {
     const PS = A.gatewayStatus || {};
     v.gateways = v.gateways.map((g, i) => GW[i] === 'stripe' ? { ...g, mode: PS.stripe ? 'Connected · Stripe Checkout' : 'Add your secret key in Settings → Payments' }
       : GW[i] === 'paypal' ? { ...g, mode: PS.paypal ? 'Connected · PayPal Orders' : 'Add client ID + secret in Settings → Payments' }
-      : { ...g, mode: 'Not available yet' }).map(g => ({ ...g, configure: () => { this.setState({ setTab: 'Payments' }); this.go('settings'); } }));
-    v.txns = (s.payments || []).map(t => ({ ...t, sfg: this.ST[t.st][0], sbg: this.ST[t.st][1] }));
+      : GW[i] === 'razorpay' ? { ...g, mode: PS.razorpay ? 'Connected · Payment Links' : 'Add key ID + secret in Settings → Payments' }
+      : GW[i] === 'paystack' ? { ...g, mode: PS.paystack ? 'Connected · Paystack Checkout' : 'Add your secret key in Settings → Payments' }
+      : { ...g, mode: PS.bank ? 'Manual approval below' : 'Add bank details in Settings → Payments' }).map(g => ({ ...g, configure: () => { this.setState({ setTab: 'Payments' }); this.go('settings'); } }));
+    const settle = (t, received) => this.ask({ title: (received ? 'Approve ' : 'Reject ') + t.id + '?', body: received ? 'Confirm the transfer of ' + t.amt + ' arrived. The plan and credits are applied to ' + t.user + ' right away.' : 'Mark this transfer as not received. ' + t.user + ' is emailed.', okLabel: received ? 'Approve payment' : 'Reject', danger: !received, icon: 'icon-landmark',
+      ok: () => this.call(async () => { const r = await rs.post('/admin/payments/' + t.id + '/settle', { received }); this.setState(x => ({ payments: x.payments.map(q => q.id === t.id ? r.payment : q), confirm: null })); }, received ? 'Payment approved' : 'Payment rejected') });
+    v.txns = (s.payments || []).map(t => ({ ...t, sfg: (this.ST[t.st] || this.ST.Pending)[0], sbg: (this.ST[t.st] || this.ST.Pending)[1], approve: () => settle(t, true), reject: () => settle(t, false) }));
 
     // API keys
     v.keys = s.keys.map(k => ({ ...k, active: !k.revoked, op: k.revoked ? 0.5 : 1,
@@ -168,7 +172,10 @@ class Component extends DesignComponent {
     const extra = {
       'Email (SMTP)': [txt('SMTP username', ''), txt('SMTP password', 'Stored encrypted', true)],
       'Payments': [txt('Stripe secret key', 'sk_live_… · stored encrypted', true), txt('Stripe webhook secret', 'whsec_… · endpoint: ' + location.origin + '/webhooks/stripe', true),
-        txt('PayPal client ID', ''), txt('PayPal secret', 'Stored encrypted', true), { label: 'PayPal mode', hint: '', isSelect: true, v: 'Live', options: ['Live', 'Sandbox'] }]
+        txt('PayPal client ID', ''), txt('PayPal secret', 'Stored encrypted', true), { label: 'PayPal mode', hint: '', isSelect: true, v: 'Live', options: ['Live', 'Sandbox'] },
+        txt('Razorpay key ID', 'rzp_live_…'), txt('Razorpay key secret', 'Stored encrypted', true), txt('Razorpay webhook secret', 'Event payment_link.paid · endpoint: ' + location.origin + '/webhooks/razorpay', true),
+        txt('Paystack secret key', 'sk_live_… · webhook: ' + location.origin + '/webhooks/paystack', true),
+        { ...txt('Bank transfer details', 'Shown to buyers who pick bank transfer. Separate lines with |, e.g. Bank: Acme Bank | Account: 0123456789 | Sort code: 00-11-22'), ff: 'inherit' }]
     };
     v.setGroups = v.setGroups.map(g => extra[g.title] ? { ...g, fields: [...g.fields, ...extra[g.title]] } : g);
     v.setGroups = v.setGroups.map(g => ({ ...g, fields: g.fields.map(f => { const n = slug(g.title + ' ' + f.label); return f.isToggle ? f : { ...f, name: n, v: vals[n] !== undefined ? vals[n] : f.v }; }) }));

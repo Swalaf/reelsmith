@@ -62,13 +62,24 @@ class Component extends DesignComponent {
       const sub = s.yearly ? cp.price * 12 : cp.price, disc = s.yearly ? sub * 0.2 : 0, total = sub - disc;
       v.coPlans = paid.map((x, i) => ({ name: x.name, d: x.credits.toLocaleString() + ' credits · ' + x.videos + ' videos', price: '$' + (s.yearly ? Math.round(x.price * 0.8) : x.price) + '/mo', bd: s.coPlan === i ? '#17181a' : '#e1e0dc', dot: s.coPlan === i ? '#17181a' : 'transparent', on: () => this.setState({ coPlan: i }) }));
       const pay = R.payments || {};
-      v.co = { ...v.co, card: v.co.card && !pay.stripe, plan: cp.name, credits: cp.credits.toLocaleString(), sub: '$' + sub.toFixed(2), disc: '−$' + disc.toFixed(2), total: '$' + total.toFixed(2), payLabel: s.paying ? 'Processing…' : 'Pay $' + total.toFixed(2), declined: !!s.declined };
+      // Offer the gateways the admin configured (Card = Stripe; test mode keeps Card available locally).
+      const methods = [['Card', 'credit-card', pay.stripe || pay.testMode], ['PayPal', 'wallet', pay.paypal], ['Razorpay', 'indian-rupee', pay.razorpay], ['Paystack', 'banknote', pay.paystack], ['Bank transfer', 'landmark', pay.bank]].filter(m => m[2]);
+      if (!methods.length) methods.push(['Card', 'credit-card', true]);
+      const method = methods.some(m => m[0] === s.coMethod) ? s.coMethod : methods[0][0];
+      if (method !== s.coMethod) setTimeout(() => this.setState({ coMethod: method }), 0);
+      v.payMethods = methods.map(m => ({ label: m[0], icon: 'icon-' + m[1], bd: method === m[0] ? '#17181a' : '#e1e0dc', on: () => this.setState({ coMethod: m[0], declined: false, bankInfo: null }) }));
+      const notes = { Razorpay: "You'll be redirected to Razorpay to pay by card, UPI or netbanking, then returned here.", Paystack: "You'll be redirected to Paystack to pay by card, bank or mobile money, then returned here.",
+        'Bank transfer': "We'll show you our bank details and a payment reference. Your plan is activated as soon as the transfer arrives (usually 1–2 business days)." };
+      v.co = { ...v.co, card: method === 'Card' && !pay.stripe, paypal: method === 'PayPal', other: !!(notes[method] || s.bankInfo),
+        note: s.bankInfo ? 'Transfer details (also emailed to you):\n' + s.bankInfo.join('\n') + '\n\nTrack it under Studio → Credits.' : notes[method] || '', noteBg: s.bankInfo ? 'oklch(0.97 0.04 150)' : '#f6f5f2' };
+      v.co = { ...v.co, plan: cp.name, credits: cp.credits.toLocaleString(), sub: '$' + sub.toFixed(2), disc: '−$' + disc.toFixed(2), total: '$' + total.toFixed(2), payLabel: s.paying ? 'Processing…' : s.bankInfo ? 'Waiting for your transfer' : method === 'Bank transfer' ? 'Get bank details' : 'Pay $' + total.toFixed(2), declined: !!s.declined };
       v.pay = async () => {
-        if (s.paying) return;
+        if (s.paying || s.bankInfo) return;
         busy('paying', true);
         try {
-          const r = await rs.post('/checkout', { plan_id: cp.id, cycle: s.yearly ? 'yearly' : 'monthly', method: s.coMethod, coupon: rs.val('coupon') });
+          const r = await rs.post('/checkout', { plan_id: cp.id, cycle: s.yearly ? 'yearly' : 'monthly', method, coupon: rs.val('coupon') });
           if (r.redirect) { window.location.href = r.redirect; return; }
+          if (r.bank) { this.setState({ paying: false, bankInfo: r.bank }); return; }
           window.RS.user = r.user;
           this.setState({ paying: false, paid: true, declined: false });
         } catch (e) {

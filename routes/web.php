@@ -45,6 +45,8 @@ Route::middleware('throttle:20,1')->group(function () {
 });
 Route::post('/logout', [AuthController::class, 'logout']);
 Route::post('/webhooks/stripe', [SiteController::class, 'stripeWebhook']);
+Route::post('/webhooks/razorpay', [SiteController::class, 'razorpayWebhook']);
+Route::post('/webhooks/paystack', [SiteController::class, 'paystackWebhook']);
 Route::post('/hooks/in/{token}', [PlatformController::class, 'incoming'])->middleware('throttle:60,1');
 
 Route::middleware(['auth', 'active'])->group(function () {
@@ -117,6 +119,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/{screen?}', [AdminController::class, 'show'])->where('screen', '[a-z]+');
         Route::put('/users/{user}', [AdminController::class, 'updateUser']);
         Route::delete('/users/{user}', [AdminController::class, 'deleteUser']);
+        Route::post('/payments/{payment:reference}/settle', [AdminController::class, 'settlePayment']);
         Route::post('/users/{user}/credits', [AdminController::class, 'credits']);
         Route::post('/users/{user}/impersonate', [AdminController::class, 'impersonate']);
         Route::delete('/projects/{project}', [AdminController::class, 'deleteProject']);

@@ -90,6 +90,11 @@ T = {
          '<button onClick="{{ doTfa }}" style="height:48px;border-radius:12px;border:0;background:oklch(0.58 0.19 35);color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer">{{ tfaBtn }}</button>', 1),
         ('<button style="align-self:center;background:none;border:0;padding:0;font:inherit;font-size:14px;color:#55575c;cursor:pointer;text-decoration:underline">Use a recovery code instead</button>',
          '<button onClick="{{ toggleRecovery }}" style="align-self:center;background:none;border:0;padding:0;font:inherit;font-size:14px;color:#55575c;cursor:pointer;text-decoration:underline">{{ recoveryLabel }}</button>', 1),
+        # Checkout: more payment methods (wrap), and a note for redirect gateways / bank transfer details
+        ('<div style="display:flex;gap:8px"><sc-for list="{{ payMethods }}" as="pm" hint-placeholder-count="2"><button onClick="{{ pm.on }}" style="flex:1;height:46px;',
+         '<div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ payMethods }}" as="pm" hint-placeholder-count="2"><button onClick="{{ pm.on }}" style="flex:1 1 130px;height:46px;', 1),
+        ('You\'ll be redirected to PayPal to approve the payment, then returned here.</div></sc-if>',
+         'You\'ll be redirected to PayPal to approve the payment, then returned here.</div></sc-if><sc-if value="{{ co.other }}"><div style="padding:16px;border-radius:12px;background:{{ co.noteBg }};font-size:14px;color:#3a3c40;line-height:1.6;white-space:pre-line">{{ co.note }}</div></sc-if>', 1),
         # Checkout coupon + onboarding topic
         ('<input placeholder="Coupon code"', '<input name="coupon" placeholder="Coupon code"', 1),
         ('<input defaultValue="5 ways Hydra keeps you hydrated" style="height:50px', '<input name="ob_topic" defaultValue="5 ways Hydra keeps you hydrated" style="height:50px', 1),
@@ -193,6 +198,9 @@ T = {
          '<span style="font-size:13px;font-weight:500;color:#fff">{{ me.name }}</span><span style="font-size:11.5px;opacity:.6">{{ me.email }}</span></div><button onClick="{{ logout }}" title="Log out" style="margin-left:auto;background:none;border:0;color:inherit;cursor:pointer;opacity:.6;font-size:15px"><i class="icon-log-out"></i></button>', 1),
     ],
     'admin': [
+        # Payments: approve / reject pending bank transfers
+        ('<td style="padding:10px 12px"><span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:{{ t.sbg }};color:{{ t.sfg }}">{{ t.st }}</span></td>',
+         '<td style="padding:10px 12px"><span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:{{ t.sbg }};color:{{ t.sfg }}">{{ t.st }}</span><sc-if value="{{ t.settle }}"><span style="display:inline-flex;gap:6px;margin-left:8px"><button onClick="{{ t.approve }}" style="height:24px;padding:0 9px;border-radius:7px;border:0;background:#17181a;color:#fff;font:inherit;font-size:11.5px;cursor:pointer">Approve</button><button onClick="{{ t.reject }}" style="height:24px;padding:0 9px;border-radius:7px;border:1px solid #e1e0dc;background:#fff;font:inherit;font-size:11.5px;cursor:pointer">Reject</button></span></sc-if></td>', 1),
         ('<span style="font-weight:600;font-size:15px;color:#fff">Reelsmith</span>', '<span style="font-weight:600;font-size:15px;color:#fff">{{ appName }}</span>', 1),
         ('font-size:12px;font-weight:600">SA</div>', 'font-size:12px;font-weight:600" title="{{ me.name }}">{{ me.initials }}</div><button onClick="{{ logout }}" title="Log out" style="width:34px;height:34px;border-radius:9px;border:1px solid #e1e0dc;background:#fff;cursor:pointer;display:grid;place-items:center"><i class="icon-log-out" style="font-size:15px"></i></button>', 1),
         ('Acme Video Cloud · self-hosted on video.acme.co', '{{ wl.appName }} · self-hosted on {{ wl.domain }}', 1),

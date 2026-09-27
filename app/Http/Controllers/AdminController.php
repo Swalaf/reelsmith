@@ -60,7 +60,7 @@ class AdminController extends Controller
                 'projects' => $projects->map->toClient()->values(),
                 'templates' => Template::orderBy('id')->get()->map->toClient()->values(),
                 'pages' => Setting::get('pages', []),
-                'payments' => Payment::with('user')->latest()->limit(200)->get()->map(fn ($p) => ['id' => $p->reference, 'user' => $p->user?->name ?? '—', 'item' => $p->item, 'gw' => $p->gateway, 'amt' => '$'.number_format($p->amount, 2), 'st' => $p->status, 'date' => $p->created_at->format('M d, Y')])->values(),
+                'payments' => Payment::with('user')->latest()->limit(200)->get()->map(fn ($p) => $this->paymentRow($p))->values(),
                 'logs' => ActivityLog::latest('id')->limit(300)->get()->map(fn ($l) => ['t' => $l->created_at->format('Y-m-d H:i:s'), 'lvl' => $l->level, 'ch' => $l->channel, 'msg' => $l->message, 'ago' => $l->created_at->diffForHumans()])->values(),
                 'kpis' => [
                     ['Total Users', number_format($users->count()), 'users', '+'.$users->where('created_at', '>=', $since30)->count().' this month', 1],
@@ -373,5 +373,20 @@ class AdminController extends Controller
     private function bytes(int $b): string
     {
         return $b >= 1024 ** 3 ? round($b / 1024 ** 3, 2).' GB' : ($b >= 1024 ** 2 ? round($b / 1024 ** 2, 1).' MB' : round($b / 1024).' KB');
+    }
+
+    private function paymentRow(Payment $p): array
+    {
+        return ['id' => $p->reference, 'user' => $p->user?->name ?? '—', 'item' => $p->item, 'gw' => $p->gateway, 'amt' => '$'.number_format($p->amount, 2), 'st' => $p->status,
+            'date' => $p->created_at->format('M d, Y'), 'settle' => $p->gateway === 'Bank transfer' && $p->status === 'Pending'];
+    }
+
+    /** Approve (plan + credits applied) or reject a pending bank transfer. */
+    public function settlePayment(Request $request, Payment $payment, Payments $payments)
+    {
+        $data = $request->validate(['received' => 'required|boolean']);
+        $payments->settleBankTransfer($payment, $data['received'], $request->user()->name);
+
+        return ['payment' => $this->paymentRow($payment->fresh())];
     }
 }

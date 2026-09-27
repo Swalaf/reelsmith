@@ -107,6 +107,71 @@ class MediaAndPaymentsTest extends TestCase
         $this->assertSame(100 + $plan->credits, $u->fresh()->credits);
     }
 
+    public function test_razorpay_payment_link_is_verified_before_applying_plan(): void
+    {
+        Setting::putValues(['set_payments_razorpay_key_id' => 'rzp_test', 'set_payments_razorpay_key_secret' => 'sec', 'set_payments_razorpay_webhook_secret' => 'whs']);
+        $plan = Plan::where('slug', 'starter')->first();
+        $status = 'created';
+        Http::fake([
+            'api.razorpay.com/v1/payment_links' => Http::response(['id' => 'plink_1', 'short_url' => 'https://rzp.io/i/abc']),
+            'api.razorpay.com/v1/payment_links/plink_1' => function () use (&$status, $plan) {
+                return Http::response(['id' => 'plink_1', 'status' => $status, 'reference_id' => Payment::first()->reference, 'amount_paid' => $status === 'paid' ? (int) ($plan->price * 100) : 0]);
+            },
+        ]);
+        $u = $this->user();
+        $this->actingAs($u)->postJson('/checkout', ['plan_id' => $plan->id, 'cycle' => 'monthly', 'method' => 'Razorpay'])->assertJsonPath('redirect', 'https://rzp.io/i/abc');
+        $ref = Payment::first()->reference;
+
+        // A forged return before payment does nothing.
+        $this->get('/checkout/return?gateway=razorpay&ref='.$ref)->assertRedirect('/checkout?failed=1');
+        $this->assertNotSame($plan->id, $u->fresh()->plan_id);
+
+        // The signed webhook applies the plan once Razorpay reports the link as paid.
+        Payment::first()->update(['status' => 'Pending']);
+        $status = 'paid';
+        $body = json_encode(['event' => 'payment_link.paid', 'payload' => ['payment_link' => ['entity' => ['reference_id' => $ref]]]]);
+        $this->call('POST', '/webhooks/razorpay', [], [], [], ['HTTP_X_RAZORPAY_SIGNATURE' => 'bad', 'CONTENT_TYPE' => 'application/json'], $body)->assertStatus(400);
+        $this->call('POST', '/webhooks/razorpay', [], [], [], ['HTTP_X_RAZORPAY_SIGNATURE' => hash_hmac('sha256', $body, 'whs'), 'CONTENT_TYPE' => 'application/json'], $body)->assertOk();
+        $this->assertSame('Paid', Payment::first()->status);
+        $this->assertSame($plan->id, $u->fresh()->plan_id);
+    }
+
+    public function test_paystack_checkout_verifies_transaction(): void
+    {
+        Setting::putValues(['set_payments_paystack_secret_key' => 'sk_test_ps', 'set_payments_currency' => 'NGN']);
+        $plan = Plan::where('slug', 'starter')->first();
+        Http::fake([
+            'api.paystack.co/transaction/initialize' => Http::response(['status' => true, 'data' => ['authorization_url' => 'https://checkout.paystack.com/xyz', 'access_code' => 'xyz']]),
+            'api.paystack.co/transaction/verify/*' => Http::response(['status' => true, 'data' => ['status' => 'success', 'amount' => (int) ($plan->price * 100)]]),
+        ]);
+        $u = $this->user();
+        $this->actingAs($u)->postJson('/checkout', ['plan_id' => $plan->id, 'cycle' => 'monthly', 'method' => 'Paystack'])->assertJsonPath('redirect', 'https://checkout.paystack.com/xyz');
+        Http::assertSent(fn ($r) => str_contains($r->url(), 'initialize') && $r['currency'] === 'NGN' && $r['email'] === $u->email);
+        $ref = Payment::first()->reference;
+        $this->get('/checkout/return?gateway=paystack&ref='.$ref)->assertRedirect('/checkout?paid=1');
+        $this->assertSame($plan->id, $u->fresh()->plan_id);
+    }
+
+    public function test_bank_transfer_waits_for_admin_approval(): void
+    {
+        config(['services.payments.test_mode' => false]);
+        Setting::putValues(['set_payments_bank_transfer_details' => 'Bank: Acme Bank | Account: 0123456789']);
+        $plan = Plan::where('slug', 'starter')->first();
+        $u = $this->user();
+        $r = $this->actingAs($u)->postJson('/checkout', ['plan_id' => $plan->id, 'cycle' => 'monthly', 'method' => 'Bank transfer'])->assertOk();
+        $this->assertContains('Account: 0123456789', $r->json('bank'));
+        $p = Payment::first();
+        $this->assertSame(['Pending', 'Bank transfer'], [$p->status, $p->gateway]);
+        $this->assertNotSame($plan->id, $u->fresh()->plan_id);
+
+        $this->actingAs($u)->postJson('/admin/payments/'.$p->reference.'/settle', ['received' => true])->assertForbidden();
+        $admin = $this->user(['email' => 'admin@example.com', 'role' => 'admin']);
+        $this->actingAs($admin)->postJson('/admin/payments/'.$p->reference.'/settle', ['received' => true])->assertOk()->assertJsonPath('payment.st', 'Paid');
+        $this->assertSame($plan->id, $u->fresh()->plan_id);
+        $this->assertSame(100 + $plan->credits, $u->fresh()->credits);
+        $this->actingAs($admin)->postJson('/admin/payments/'.$p->reference.'/settle', ['received' => true])->assertUnprocessable();
+    }
+
     public function test_paypal_checkout_captures_order(): void
     {
         Setting::putValues(['set_payments_paypal_client_id' => 'id', 'set_payments_paypal_secret' => 'sec', 'set_payments_paypal_mode' => 'Sandbox']);

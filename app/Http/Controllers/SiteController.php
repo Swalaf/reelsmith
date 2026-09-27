@@ -43,6 +43,18 @@ class SiteController extends Controller
         return redirect('/checkout?'.($ok ? 'paid=1' : 'failed=1'));
     }
 
+    public function razorpayWebhook(Request $request, Payments $payments)
+    {
+        return $payments->razorpayWebhook($request->getContent(), $request->header('X-Razorpay-Signature'))
+            ? response()->json(['received' => true]) : response()->json(['error' => 'invalid signature'], 400);
+    }
+
+    public function paystackWebhook(Request $request, Payments $payments)
+    {
+        return $payments->paystackWebhook($request->getContent(), $request->header('X-Paystack-Signature'))
+            ? response()->json(['received' => true]) : response()->json(['error' => 'invalid signature'], 400);
+    }
+
     public function stripeWebhook(Request $request, Payments $payments)
     {
         return $payments->stripeWebhook($request->getContent(), $request->header('Stripe-Signature'))
