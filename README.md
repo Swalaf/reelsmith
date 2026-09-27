@@ -6,13 +6,13 @@ Claude Design screens from the *Reelsmith* project as real, database-backed page
 | Page | URL | What's real |
 |---|---|---|
 | **Website** | `/`, `/pricing`, `/templates`, `/docs`, `/contact`, `/legal/*`, `/changelog` … | Plans and templates come from the database, the contact form is stored, and the cookie banner works |
-| **Auth** | `/login`, `/register`, `/forgot-password`, `/reset-password/{token}`, `/verify`, `/onboarding` | Session login, registration (+ sign-up credits), emailed 6-digit verification codes, password reset, and saved onboarding answers |
-| **Checkout** | `/checkout` | Stripe Checkout or PayPal; the plan and credits are applied once the gateway confirms payment |
-| **Studio** | `/studio`, `/studio/{screen}` | Idea → AI script → per-scene AI images/clips/uploads → voiceover → captions → FFmpeg render with music, plus live progress, library, media library, templates, brand kit and voice previews |
-| **AI Platform** | `/platform` | Workflows, cinematic, agents and repurposing screens (client-side; shares the user, credits and branding) |
-| **Admin** | `/admin`, `/admin/{screen}` | Live KPIs and charts, users (suspend, delete, credits, impersonate), projects, AI providers (add/edit/test/toggle, encrypted keys), models, templates, plans CRUD, payments, API keys, white label, pages CMS, settings and logs |
+| **Auth** | `/login`, `/register`, `/forgot-password`, `/reset-password/{token}`, `/verify`, `/two-factor`, `/onboarding` | Session login, registration (+ sign-up credits), emailed 6-digit verification codes, password reset, authenticator-app two-factor with recovery codes, and saved onboarding answers |
+| **Checkout** | `/checkout` | Stripe, PayPal, Razorpay, Paystack or bank transfer; the plan and credits are applied once the gateway confirms payment (or an admin approves the transfer) |
+| **Studio** | `/studio`, `/studio/{screen}` | Idea → AI script → per-scene AI images/clips/uploads → voiceover → captions → FFmpeg render with music, plus live progress, library, templates, brand kit, voice previews, and the account screens: Media Library, Credits & billing, Usage, API keys, Settings (profile, password, 2FA, notifications) and Support tickets |
+| **AI Platform** | `/platform`, `/platform/{screen}` | Workflow builder with real, queued runs (test, live webhook and scheduled triggers), run history, studio briefs, cinematic productions with generated shots and an assembled cut, character library, AI agents, repurposing into clips/posts/captions/thumbnails, and API & webhooks |
+| **Admin** | `/admin`, `/admin/{screen}` | Live KPIs and charts, users (suspend, delete, credits, impersonate), projects, AI providers (add/edit/test/toggle, encrypted keys), models, templates, plans CRUD, payments (with bank-transfer approval), API keys, white label, pages CMS, settings (incl. cloud storage and "require 2FA for admins") and logs |
 | **Installer** | `/install` | Real requirement checks, a database test (MySQL/MariaDB or SQLite) and provider key tests; it writes `.env`, migrates, seeds, creates the admin and then locks itself |
-| **REST API** | `/api/v1/*` | `POST /videos`, `GET /videos/{id}`, `GET /templates`, `POST /scripts` and `GET /credits`, with `Authorization: Bearer rsk_live_…` and per-key rate limits |
+| **REST API** | `/api/v1/*`, `/api/*` | `POST /v1/videos`, `GET /v1/videos/{id}`, `GET /v1/templates`, `POST /v1/scripts`, `GET /v1/credits`, plus `POST /video/generate`, `POST /workflows/run`, `GET /jobs/{id}`, `POST /images/generate` and `POST /agents/{agent}/run`, with `Authorization: Bearer rsk_live_…`, per-key rate limits and request logs |
 
 ## Requirements
 
@@ -43,16 +43,18 @@ redirects there until installation is finished.
 3. Add the cron entry and a queue worker (the installer shows the exact commands):
    ```
    * * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
-   php artisan queue:work --queue=render,ai,default --tries=3
+   php artisan queue:work --queue=render,ai,default --tries=3 --timeout=1800
    ```
-   With `QUEUE_CONNECTION=database`, renders run on the worker. The default `sync` runs them
-   right after the response, which is fine for small installs.
+   With `QUEUE_CONNECTION=database`, renders and workflow runs go to the worker. The default
+   `sync` runs them right after the response, which is fine for small installs. Cron drives
+   scheduled workflows and the cloud-storage sync.
 
 ## How the design is wired in
 
 ```
 design/src/*.dc.html         original Claude Design files (source of truth, untouched)
 design/import.py             splits each design into template + logic and applies small patches
+design/extra/*.html          screens the design links to but doesn't draw (Studio account screens), in its style
 resources/designs/           generated: <page>.template.html, <page>.logic.js, <page>.props.json
 resources/designs/integration/<page>.js   Laravel integration (hand-written)
 public/support.js            the Claude Design runtime that renders the pages (React 18)
@@ -93,22 +95,45 @@ Every step falls back to the next connected provider when one fails, and every f
 - **Music**: put MP3s at `storage/app/public/music/uplifting-corporate.mp3`, `soft-focus.mp3`, `night-drive.mp3` and `morning-run.mp3`. Tracks without a file use a generated ambient pad.
 - **Rendering takes minutes with real providers.** Use a queue worker in production (`QUEUE_CONNECTION=database` and `php artisan queue:work --queue=render,default --timeout=1800`). With `sync`, renders run after the response on PHP-FPM. For local development run `PHP_CLI_SERVER_WORKERS=4 php artisan serve`, because the single-worker dev server blocks while rendering.
 
+## AI Platform
+
+Everything on `/platform` is saved per user and actually runs:
+
+- **Workflows**: nodes are executed in order on the queue. AI Text (optionally as one of your agents), Script, AI Image, AI Video, Voice, Render (makes a real Studio video), Condition, Delay, Transform, Save file, HTTP request, Email, Social (posts to a Zapier/Make webhook) and Output. Use `{input.topic}`, `{copy}`, `{video}` and other variables between steps. "Test workflow" runs it immediately. **Activate** turns on its trigger: a *Webhook* node gets a URL (`POST /hooks/in/{token}`, JSON body = input), and a *Schedule* node runs from cron. Each run has a credit cap (workflow settings).
+- **Runs**: every execution with per-step status, timings, credits, outputs and retry.
+- **Cinematic**: productions with scenes and shots. Generate shot frames with your image providers, rewrite the screenplay with your text provider, and *Assemble cut* renders the shots into one video.
+- **Characters and agents**: reference images for characters, and editable agents (system prompt, model, output format) you can try in place or call from workflows and the API.
+- **Repurpose**: turns a rendered video into a 16:9 cut, 9:16 Shorts/Reels/TikTok clips, LinkedIn, X and blog copy, SRT/VTT captions and thumbnail frames.
+- **API & webhooks**: outgoing webhooks for `video.completed`, `video.failed`, `run.completed`, `run.failed` and `image.completed`, signed with `X-Reelsmith-Signature: sha256=HMAC(body, secret)`, plus delivery history and API request logs.
+
+## Accounts and security
+
+- **Two-factor authentication**: Studio → Settings → *Turn on two-factor*. Scan the QR code with any authenticator app, confirm a code, and save the 8 one-time recovery codes. Sign-in then asks for a code, and "Trust this device" skips it for 30 days. Admin → Settings → Security → *Require 2FA for admins* sends admins without 2FA to set it up before the admin area opens.
+- **API keys**: users create and revoke their own keys under Studio → API, if their plan includes API access (Admin → Plans).
+- **Support**: users open tickets under Studio → Support. Administrators see every ticket in the same screen and their replies are emailed to the user. New tickets are emailed to the support address in White Label.
+
 ## Payments
 
-Set keys in **Admin → Settings → Payments** (stored encrypted) or in `.env` (`STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`, `PAYPAL_MODE=sandbox|live`).
+Set keys in **Admin → Settings → Payments** (stored encrypted) or in `.env` (`STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`, `PAYPAL_MODE=sandbox|live`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `PAYSTACK_SECRET`, `BANK_TRANSFER_DETAILS`). Checkout only offers the gateways that are configured and switched on in Admin → Payments. The currency is set under Settings → Payments.
 
 - **Stripe**: buyers are sent to Stripe Checkout. The plan and credits are applied only after Stripe confirms the payment, either when the buyer returns or via the webhook `POST /webhooks/stripe` (event `checkout.session.completed`, signed with the webhook secret).
 - **PayPal**: buyers approve the order on PayPal, and it is captured when they return.
+- **Razorpay**: buyers pay on a Razorpay Payment Link (cards, UPI, netbanking). The link is checked with Razorpay when they return, and the webhook `POST /webhooks/razorpay` (event `payment_link.paid`) covers closed tabs.
+- **Paystack**: buyers pay on Paystack's hosted page. The transaction is verified when they return, and via `POST /webhooks/paystack` (`charge.success`, signed with your secret key).
+- **Bank transfer**: buyers get your bank details and a payment reference (on screen and by email). The order stays *Pending* until an admin clicks **Approve** in Admin → Payments, which applies the plan and credits and emails the buyer.
 - **No gateway configured**: on a live site checkout is refused. Only local/debug installs complete orders in test mode.
+
+## Storage
+
+Files are always written to `storage/app/public` first, because FFmpeg needs real files. To serve renders and media from a bucket, fill in **Admin → Settings → Storage**: driver, endpoint (for R2, Wasabi, B2 or MinIO), bucket, access key, secret key, region and an optional public/CDN URL. *Connection* runs a live write/delete test. You can also set `MEDIA_DISK=s3` and the `AWS_*` variables (the installer does this).
+
+With a bucket configured, finished renders, uploads, run outputs and generated images are copied to it and their links point there. The bucket must allow public reads, or use a public/CDN URL. `php artisan reelsmith:storage-sync` runs every 5 minutes to copy anything missed. Add `--prune-days=30` to delete local copies of renders older than 30 days that are safely in the bucket; they are fetched back automatically if needed again (e.g. for repurposing).
 
 ## Email
 
 Set SMTP in **Admin → Settings → Email** (host, port, from address, username, password). It overrides `.env`. New users get a 6-digit verification code (the toggle is under Settings → General → *Require email verification*), and until they verify they can't create or render videos. Password resets and "your video is ready" emails use the same mailer.
 
-## Current limits
+## Notes
 
-- The AI Platform canvas (workflows, agents, cinematic) is client-side only; nothing there is saved.
-- Studio sidebar items without a designed screen (Media Library, Credits, Usage, API, Settings, Support) open the dashboard.
-- Two-factor authentication follows the design, but codes aren't enforced yet.
-- S3 storage: install `league/flysystem-aws-s3-v3` and set `FILESYSTEM_DISK=s3` (the installer saves the credentials).
-- Razorpay, Paystack and bank transfer are shown in the design but not implemented.
+- The Studio and Platform poll for progress while renders and runs are active. Use a queue worker (or PHP-FPM) in production; PHP's built-in single-worker server holds requests while a job runs.
+- Provider and gateway calls are real HTTP requests. Test your keys with *Test connection* (providers) and with the gateway's sandbox/test keys before going live.
