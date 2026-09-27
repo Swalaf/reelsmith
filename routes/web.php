@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StudioController;
 use Illuminate\Http\Request;
@@ -42,6 +43,7 @@ Route::middleware('throttle:20,1')->group(function () {
 });
 Route::post('/logout', [AuthController::class, 'logout']);
 Route::post('/webhooks/stripe', [SiteController::class, 'stripeWebhook']);
+Route::post('/hooks/in/{token}', [PlatformController::class, 'incoming'])->middleware('throttle:60,1');
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/checkout', [SiteController::class, 'checkout']);
@@ -51,7 +53,33 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/onboarding', [SiteController::class, 'onboarding']);
 
     Route::get('/studio/{screen?}', [StudioController::class, 'show'])->where('screen', '[a-z]+');
-    Route::get('/platform/{screen?}', [StudioController::class, 'platform'])->where('screen', '[a-z]+');
+    Route::get('/platform/{screen?}', [PlatformController::class, 'show'])->where('screen', '[a-z]+');
+    Route::prefix('platform/api')->group(function () {
+        Route::get('/state', [PlatformController::class, 'state']);
+        Route::post('/workflows', [PlatformController::class, 'createWorkflow']);
+        Route::put('/workflows/{workflow}', [PlatformController::class, 'updateWorkflow']);
+        Route::delete('/workflows/{workflow}', [PlatformController::class, 'deleteWorkflow']);
+        Route::post('/workflows/{workflow}/run', [PlatformController::class, 'runWorkflow'])->middleware('throttle:20,1');
+        Route::get('/runs/{run}', [PlatformController::class, 'showRun']);
+        Route::post('/runs/{run}/retry', [PlatformController::class, 'retryRun'])->middleware('throttle:20,1');
+        Route::post('/briefs', [PlatformController::class, 'brief'])->middleware('throttle:20,1');
+        Route::post('/characters', [PlatformController::class, 'saveCharacter']);
+        Route::put('/characters/{character}', [PlatformController::class, 'saveCharacter']);
+        Route::delete('/characters/{character}', [PlatformController::class, 'deleteCharacter']);
+        Route::post('/characters/{character}/image', [PlatformController::class, 'characterImage'])->middleware('throttle:20,1');
+        Route::put('/production', [PlatformController::class, 'saveProduction']);
+        Route::post('/production/shots/{shot}', [PlatformController::class, 'generateShot'])->middleware('throttle:30,1');
+        Route::post('/production/assemble', [PlatformController::class, 'assemble']);
+        Route::post('/production/rewrite', [PlatformController::class, 'rewrite'])->middleware('throttle:10,1');
+        Route::post('/agents', [PlatformController::class, 'saveAgent']);
+        Route::put('/agents/{agent}', [PlatformController::class, 'saveAgent']);
+        Route::delete('/agents/{agent}', [PlatformController::class, 'deleteAgent']);
+        Route::post('/agents/{agent}/run', [PlatformController::class, 'runAgent'])->middleware('throttle:20,1');
+        Route::post('/repurpose', [PlatformController::class, 'repurpose'])->middleware('throttle:10,1');
+        Route::post('/webhooks', [PlatformController::class, 'addWebhook']);
+        Route::post('/webhooks/{webhook}/test', [PlatformController::class, 'testWebhook'])->middleware('throttle:10,1');
+        Route::delete('/webhooks/{webhook}', [PlatformController::class, 'deleteWebhook']);
+    });
     Route::prefix('studio')->group(function () {
         Route::post('/projects', [StudioController::class, 'store']);
         Route::get('/projects/{project}', [StudioController::class, 'project']);

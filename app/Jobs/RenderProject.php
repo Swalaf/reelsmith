@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Project;
 use App\Models\Setting;
 use App\Services\SceneMedia;
+use App\Services\Webhooks;
 use App\Support\Branding;
 use App\Support\Ffmpeg;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -141,6 +142,7 @@ class RenderProject implements ShouldQueue
                 $project->user?->adjustCredits($project->credits_used, 'Refund for failed render #'.$project->id);
             }
             ActivityLog::record("Render of project #{$project->id} failed: ".mb_substr($e->getMessage(), 0, 300).' — credits refunded', 'queue', 'ERROR');
+            Webhooks::dispatch($project->user, 'video.failed', ['id' => 'vid_'.$project->id, 'title' => $project->name, 'error' => $project->error]);
         } finally {
             File::deleteDirectory($work);
         }
@@ -338,6 +340,7 @@ class RenderProject implements ShouldQueue
             'render_seconds' => (int) (microtime(true) - $started), 'providers_used' => mb_substr($providers, 0, 250)]);
         ActivityLog::record(sprintf('Render job for project #%d completed in %.1fs', $project->id, microtime(true) - $started), 'queue');
         $this->notify($project);
+        Webhooks::dispatch($project->user, 'video.completed', ['id' => 'vid_'.$project->id, 'title' => $project->name, 'url' => $project->outputUrl(), 'duration' => $project->totalSeconds()]);
     }
 
     /** "We'll email you when the video is ready." */

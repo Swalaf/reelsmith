@@ -3,10 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\StudioController;
+use App\Jobs\RunWorkflow;
+use App\Models\Agent;
 use App\Models\CreditTransaction;
 use App\Models\Project;
 use App\Models\Template;
+use App\Models\Workflow;
+use App\Models\WorkflowRun;
+use App\Services\AiGateway;
 use App\Services\ScriptWriter;
 use Illuminate\Http\Request;
 
@@ -68,5 +74,48 @@ class V1Controller extends Controller
     {
         return ['id' => 'vid_'.$p->id, 'status' => strtolower($p->status === 'Processing' ? 'queued' : $p->status), 'title' => $p->name,
             'duration' => $p->totalSeconds(), 'aspect_ratio' => $p->ratio, 'credits_reserved' => $p->credits_used, 'url' => $p->outputUrl(), 'error' => $p->error];
+    }
+
+    /** POST /api/workflows/run {workflow_id, input} */
+    public function runWorkflow(Request $request)
+    {
+        $data = $request->validate(['workflow_id' => 'required', 'input' => 'nullable|array']);
+        $id = preg_replace('/^wf_/', '', (string) $data['workflow_id']);
+        $wf = Workflow::where('user_id', $request->user()->id)->where(fn ($q) => $q->where('id', (int) $id)->orWhere('name', $data['workflow_id']))->firstOrFail();
+        $run = app(PlatformController::class)->startWorkflow($wf, $data['input'] ?? [], 'API');
+
+        return response()->json(['run_id' => 'run_'.$run->id, 'status' => 'running'], 202);
+    }
+
+    /** GET /api/jobs/{id} — vid_… (video) or run_…/job_… (workflow, image, agent runs). */
+    public function job(Request $request, string $id)
+    {
+        if (str_starts_with($id, 'vid_')) {
+            return $this->showVideo($request, $id) + ['type' => 'video'];
+        }
+        $run = WorkflowRun::where('user_id', $request->user()->id)->findOrFail((int) preg_replace('/^(run|job)_/', '', $id));
+
+        return ['id' => 'run_'.$run->id, 'type' => $run->kind, 'status' => strtolower($run->status), 'output' => $run->output, 'credits' => $run->credits, 'error' => $run->error,
+            'steps' => array_map(fn ($s) => ['title' => $s['title'], 'status' => $s['status'], 'meta' => $s['meta'] ?? ''], (array) $run->steps)];
+    }
+
+    /** POST /api/images/generate {prompt, count, style, aspect_ratio} */
+    public function images(Request $request)
+    {
+        $data = $request->validate(['prompt' => 'required|string|max:2000', 'count' => 'nullable|integer|min:1|max:6', 'style' => 'nullable|string|max:60', 'aspect_ratio' => 'nullable|in:9:16,16:9,1:1,4:5']);
+        $prompt = $data['prompt'].(! empty($data['style']) ? ', '.str_replace('_', ' ', $data['style']).' style' : '');
+        $run = WorkflowRun::create(['user_id' => $request->user()->id, 'kind' => 'image', 'name' => 'Images · API', 'trigger' => 'API', 'status' => 'Queued', 'input' => ['topic' => $data['prompt']], 'log' => [],
+            'steps' => [['id' => 1, 't' => 'aiimage', 'title' => 'Generate images', 'cfg' => ['Prompt' => $prompt, 'Count' => (string) ($data['count'] ?? 1), 'Aspect ratio' => $data['aspect_ratio'] ?? '1:1'], 'status' => 'wait', 'meta' => '', 'dur' => '—']]]);
+        RunWorkflow::start($run);
+
+        return response()->json(['job_id' => 'run_'.$run->id, 'status' => 'queued'], 202);
+    }
+
+    /** POST /api/agents/{id}/run {message} — replies synchronously. */
+    public function runAgent(Request $request, string $agent)
+    {
+        $a = Agent::where('user_id', $request->user()->id)->where(fn ($q) => $q->where('id', (int) $agent)->orWhereRaw('lower(name) = ?', [strtolower(str_replace('-', ' ', $agent))]))->firstOrFail();
+
+        return app(PlatformController::class)->runAgent($request, $a, app(AiGateway::class));
     }
 }

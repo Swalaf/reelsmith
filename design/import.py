@@ -137,6 +137,44 @@ T = {
     ],
     'platform': [
         ('Good morning, John 👋', '{{ greeting }} 👋', 1),
+        # Workflow builder: real name, node settings, credit cap, open from the list
+        ('>Product launch → video → client</span>', '>{{ wfName }}</span>', 1),
+        ('{{ wfNodeCount }} nodes · saved just now', '{{ wfNodeCount }} nodes · {{ wfSaved }}', 1),
+        ('<textarea rows="4" defaultValue="{{ f.v }}"', '<textarea key="{{ f.key }}" onChange="{{ f.set }}" rows="4" defaultValue="{{ f.v }}"', 1),
+        (r'<input defaultValue="\{\{ f\.v \}\}"( style="height:36px;padding:0 10px;border:1px solid #e1e0dc;border-radius:8px;font-family:)', r'<input key="{{ f.key }}" onChange="{{ f.set }}" defaultValue="{{ f.v }}"\1', 're'),
+        ('<input defaultValue="120"', '<input key="{{ wfKey }}" defaultValue="{{ wfCap }}" onChange="{{ setWfCap }}"', 1),
+        ('<button onClick="{{ go.builder }}" style="background:none;border:0;padding:0;font:inherit;font-weight:500;cursor:pointer;text-align:left">{{ w.name }}</button>',
+         '<button onClick="{{ w.open }}" style="background:none;border:0;padding:0;font:inherit;font-weight:500;cursor:pointer;text-align:left">{{ w.name }}</button>', 1),
+        # Cinematic: assemble, rewrite, logline, setup selects
+        (r'<button (style="[^"]*")><i class="icon-clapperboard"([^>]*)></i>Assemble cut</button>', r'<button onClick="{{ assemble }}" \1><i class="icon-clapperboard"\2></i>{{ assembleLabel }}</button>', 're'),
+        (r'<button (style="[^"]*")><i class="icon-refresh-cw"([^>]*)></i>Rewrite</button>', r'<button onClick="{{ rewrite }}" \1><i class="icon-refresh-cw"\2></i>{{ rewriteLabel }}</button>', 're'),
+        (r'defaultValue="An aging lighthouse keeper[^"]*"', 'key="{{ prod.key }}" defaultValue="{{ prod.logline }}" onChange="{{ setLogline }}"', 're'),
+        ('<select defaultValue="{{ f.v }}"', '<select key="{{ f.key }}" onChange="{{ f.set }}" defaultValue="{{ f.v }}"', 1),
+        # Characters
+        ('<sc-for list="{{ characters }}" as="c" hint-placeholder-count="3">\n        <div style="background:#fff;border:1px solid #e8e7e3;border-radius:16px;overflow:hidden;display:flex;flex-direction:column">',
+         '<sc-for list="{{ characters }}" as="c" hint-placeholder-count="3">\n        <div onClick="{{ c.edit }}" title="Click to edit · generate a reference image" style="cursor:pointer;background:#fff;border:1px solid #e8e7e3;border-radius:16px;overflow:hidden;display:flex;flex-direction:column">', 1),
+        (r'<button (style="border:1\.5px dashed #d6d4ce;border-radius:16px;[^"]*")><i class="icon-user-plus"', r'<button onClick="{{ newCharacter }}" \1><i class="icon-user-plus"', 're'),
+        # Studio brief drawer
+        ('<textarea rows="5" placeholder="{{ brief.ph }}"', '<textarea name="brief_text" rows="5" placeholder="{{ brief.ph }}"', 1),
+        (r'(>Visual style</span>)<select ', r'\1<select name="brief_style" ', 're'),
+        (r'(>Agent \(optional\)</span>)<select ', r'\1<select name="brief_agent" ', 're'),
+        ('<option>None</option><option>Ad Creator</option><option>Script Writer</option><option>Marketing Agent</option>', '<option>None</option><sc-for list="{{ agentNames }}" as="an"><option>{{ an }}</option></sc-for>', 1),
+        # Agent drawer
+        ('<textarea rows="6" defaultValue="{{ ag.sys }}"', '<textarea name="ag_sys" key="{{ ag.key }}" rows="6" defaultValue="{{ ag.sys }}"', 1),
+        ('<option>{{ ag.model }}</option><option>gemini-2.0-flash</option><option>llama-3.3-70b:free</option>', '<sc-for list="{{ ag.models }}" as="mo"><option>{{ mo }}</option></sc-for>', 1),
+        (r'(>Model</span>)<select ', r'\1<select name="ag_model" key="{{ ag.key }}" defaultValue="{{ ag.model }}" ', 're'),
+        ('<option>{{ ag.fmt }}</option><option>Markdown</option><option>JSON</option><option>Plain text</option>', '<option>{{ ag.fmt }}</option><option>Markdown</option><option>JSON</option><option>Plain text</option><option>Script JSON</option><option>SSML</option>', 1),
+        (r'(>Output format</span>)<select ', r'\1<select name="ag_fmt" key="{{ ag.key }}" ', 're'),
+        ('<div style="display:flex;gap:10px;padding:16px 22px;border-top:1px solid #f0efec"><button onClick="{{ closeAgent }}"',
+         '<div style="padding:0 22px 16px;display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:500;color:#3a3c40">Try it</span><div style="display:flex;gap:8px"><input name="ag_try" placeholder="Ask this agent something…" style="flex:1;min-width:0;height:38px;padding:0 12px;border:1px solid #e1e0dc;border-radius:9px;font:inherit;font-size:13.5px;outline:none"><button onClick="{{ tryAgent }}" style="height:38px;padding:0 14px;border-radius:9px;border:0;background:#17181a;color:#fff;font:inherit;font-size:13px;cursor:pointer">{{ tryLabel }}</button></div><sc-if value="{{ tryReply }}"><pre style="margin:0;max-height:200px;overflow:auto;white-space:pre-wrap;padding:10px 12px;border-radius:9px;background:#f6f5f2;font-family:\'Geist Mono\',monospace;font-size:12px;line-height:1.5">{{ tryReply }}</pre></sc-if></div><div style="display:flex;gap:10px;padding:16px 22px;border-top:1px solid #f0efec"><button onClick="{{ closeAgent }}"', 1),
+        # Repurpose source
+        ('<span style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a8c91">Source</span>',
+         '<span style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a8c91">Source</span><select value="{{ rpSourceId }}" onChange="{{ setRpSource }}" style="height:36px;padding:0 10px;border:1px solid #3a3c42;border-radius:9px;background:#1d1f23;color:#e7e7ea;font:inherit;font-size:13px"><sc-for list="{{ rpSources }}" as="o"><option value="{{ o.id }}">{{ o.name }}</option></sc-for></select>', 1),
+        ('<div style="position:relative;aspect-ratio:16/9;border-radius:10px;background:#30384a;overflow:hidden">', '<div style="position:relative;aspect-ratio:16/9;border-radius:10px;background:{{ rp.bg }};overflow:hidden">', 1),
+        ('border-radius:6px">48:12</span>', 'border-radius:6px">{{ rp.dur }}</span>', 1),
+        ('<span style="font-weight:600;color:#fff">Q3 Product Webinar</span><span style="font-size:12px;color:#8a8c91">webinar-q3.mp4 · 1.2 GB</span>', '<span style="font-weight:600;color:#fff">{{ rp.name }}</span><span style="font-size:12px;color:#8a8c91">{{ rp.meta }}</span>', 1),
+        # Webhook rows: click to test / remove
+        (r'(<sc-for list="\{\{ hooks \}\}" as="h"[^>]*>)<tr style="', r'\1<tr onClick="{{ h.on }}" title="Click to send a test event or remove" style="cursor:pointer;', 're'),
         ('<span style="font-weight:600;font-size:15px;color:#fff">Reelsmith</span>', '<span style="font-weight:600;font-size:15px;color:#fff">{{ appName }}</span>', 1),
         ('<span style="font-family:\'Geist Mono\',monospace;color:#fff">2,480</span>', '<span style="font-family:\'Geist Mono\',monospace;color:#fff">{{ me.credits }}</span>', 1),
         ('<div style="width:49.6%;height:100%;border-radius:9px;background:oklch(0.58 0.19 35)"></div>', '<div style="width:{{ me.creditsPct }};height:100%;border-radius:9px;background:oklch(0.58 0.19 35)"></div>', 1),
@@ -237,6 +275,11 @@ def encode_case(html: str) -> str:
 
 def apply(text: str, patches, label: str) -> str:
     for old, new, count in patches:
+        if count == 're':
+            text, n = re.subn(old, new, text, flags=re.S)
+            if n != 1:
+                sys.exit(f'[{label}] regex expected exactly 1 match: {old[:80]!r} (found {n})')
+            continue
         found = text.count(old)
         if isinstance(count, tuple):
             n = count[1]

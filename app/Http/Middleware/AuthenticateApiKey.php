@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\ApiKey;
+use App\Models\ApiRequestLog;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,11 @@ class AuthenticateApiKey
         Auth::setUser($key->user);
         $request->attributes->set('api_key', $key);
 
-        return $next($request);
+        $start = microtime(true);
+        $response = $next($request);
+        ApiRequestLog::create(['user_id' => $key->user_id, 'api_key_id' => $key->id, 'method' => $request->method(),
+            'path' => '/'.ltrim($request->path(), '/'), 'status' => $response->getStatusCode(), 'ms' => (int) ((microtime(true) - $start) * 1000)]);
+
+        return $response;
     }
 }

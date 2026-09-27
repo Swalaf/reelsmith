@@ -25,8 +25,12 @@ class Ffmpeg
             return null;
         }
         $p = new Process([$bin, '-version']);
-        $p->setTimeout(10);
-        $p->run();
+        $p->setTimeout(20);
+        try {
+            $p->run();
+        } catch (\Throwable) {
+            return null;
+        }
 
         return preg_match('/ffmpeg version (\S+)/', $p->getOutput(), $m) ? $m[1] : null;
     }
